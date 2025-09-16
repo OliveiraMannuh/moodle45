@@ -21,32 +21,20 @@
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/course/moodleform_mod.php');
 
-/**
- * Module instance settings form.
- *
- * @package    mod_agendar
- * @copyright  2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 class mod_agendar_mod_form extends moodleform_mod {
 
-    /**
-     * Defines forms elements
-     */
-    public function definition() {
-        global $CFG;
-        
+    function definition() {
         $mform = $this->_form;
 
-        // Seção Geral.
+        // Campos padrão
         $mform->addElement('header', 'general', get_string('general', 'form'));
-
-        // Nome do agendamento.
-        $mform->addElement('text', 'name', get_string('name', 'mod_agendar'), array('size' => '64'));
+        
+        $mform->addElement('text', 'name', get_string('agendarname', 'agendar'), array('size' => '64'));
         if (!empty($CFG->formatstringstriptags)) {
             $mform->setType('name', PARAM_TEXT);
         } else {
@@ -55,151 +43,39 @@ class mod_agendar_mod_form extends moodleform_mod {
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
 
-        // Descrição.
         $this->standard_intro_elements();
 
-        // Seção de Horários Disponíveis.
-        $mform->addElement('header', 'availabletimessection', get_string('availabletimes', 'mod_agendar'));
-
-        // Elementos que serão repetidos para cada horário.
-        $repeatarray = array();
+        // Configurações de agendamento
+        $mform->addElement('header', 'bookingsettings', get_string('bookingsettings', 'agendar'));
         
-        // Data e hora de início.
-        $repeatarray[] = $mform->createElement('date_time_selector', 'slotstart', 
-                        get_string('slotstart', 'mod_agendar'));
+        $mform->addElement('text', 'maxbookingsperuser', get_string('maxbookingsperuser', 'agendar'), 
+            array('size' => '3'));
+        $mform->setType('maxbookingsperuser', PARAM_INT);
+        $mform->setDefault('maxbookingsperuser', 1);
+        $mform->addHelpButton('maxbookingsperuser', 'maxbookingsperuser', 'agendar');
 
-        // Data e hora de fim.
-        $repeatarray[] = $mform->createElement('date_time_selector', 'slotend', 
-                        get_string('slotend', 'mod_agendar'));
+        $mform->addElement('selectyesno', 'allowcancellation', get_string('allowcancellation', 'agendar'));
+        $mform->setDefault('allowcancellation', 1);
+        $mform->addHelpButton('allowcancellation', 'allowcancellation', 'agendar');
 
-        // Número máximo de participantes.
-        $participantoptions = array_combine(range(1, 30), range(1, 30));
-        $repeatarray[] = $mform->createElement('select', 'maxparticipants', 
-                        get_string('maxparticipants', 'mod_agendar'), 
-                        $participantoptions);
+        $cancellationoptions = array(
+            '0' => get_string('cancellationdeadlinenone', 'agendar'),
+            '3600' => get_string('timeduration', 'core', '1 ' . get_string('hour')),
+            '7200' => get_string('timeduration', 'core', '2 ' . get_string('hours')),
+            '86400' => get_string('timeduration', 'core', '1 ' . get_string('day')),
+            '172800' => get_string('timeduration', 'core', '2 ' . get_string('days')),
+            '604800' => get_string('timeduration', 'core', '1 ' . get_string('week')),
+        );
+        $mform->addElement('select', 'cancellationdeadline', get_string('cancellationdeadline', 'agendar'), 
+            $cancellationoptions);
+        $mform->setDefault('cancellationdeadline', 3600);
+        $mform->disabledIf('cancellationdeadline', 'allowcancellation', 'eq', 0);
 
-        // Checkbox para ativar/desativar o horário.
-        $repeatarray[] = $mform->createElement('checkbox', 'slotenabled', 
-                        get_string('enabled', 'mod_agendar'));
+        $mform->addElement('selectyesno', 'emailnotifications', get_string('emailnotifications', 'agendar'));
+        $mform->setDefault('emailnotifications', 1);
+        $mform->addHelpButton('emailnotifications', 'emailnotifications', 'agendar');
 
-        // Botão para remover este horário.
-        $repeatarray[] = $mform->createElement('button', 'removeslot', 
-                        get_string('removeslot', 'mod_agendar'));
-
-        // Opções de repetição.
-        $repeateloptions = array();
-        $repeateloptions['slotstart']['type'] = PARAM_INT;
-        $repeateloptions['slotend']['type'] = PARAM_INT;
-        $repeateloptions['maxparticipants']['type'] = PARAM_INT;
-        $repeateloptions['slotenabled']['type'] = PARAM_BOOL;
-        $repeateloptions['maxparticipants']['default'] = 1;
-        $repeateloptions['slotenabled']['default'] = 1;
-
-        // Adiciona os elementos repetidos.
-        $this->repeat_elements($repeatarray, 1, $repeateloptions, 
-                           'slot_repeats', 'slot_add_fields', 1, 
-                           get_string('addmoreslots', 'mod_agendar'), true);
-
-        // Elementos padrão do módulo.
-        $this->standard_coursemodule_elements();    
-
-        // Botões padrão.
+        $this->standard_coursemodule_elements();
         $this->add_action_buttons();
-    }
-
-    /**
-     * Add completion rules to the form
-     * 
-     * @return array Array of string IDs of added items, empty array if none
-     */
-    public function add_completion_rules() {
-        $mform =& $this->_form;
-        
-        // Adiciona checkbox para condição de conclusão por agendamento
-        $group = array();
-        $group[] = $mform->createElement('checkbox', 'completionbooking', '', 
-                   get_string('completionbooking', 'mod_agendar'));
-        $mform->addGroup($group, 'completionbookinggroup', 
-                         get_string('completionbookinggroup', 'mod_agendar'), 
-                         array(' '), false);
-        
-        // Define ajuda para o elemento
-        $mform->addHelpButton('completionbookinggroup', 'completionbooking', 'mod_agendar');
-        
-        // Desabilita se completion tracking estiver desabilitado
-        $mform->disabledIf('completionbooking', 'completion', 'eq', COMPLETION_TRACKING_NONE);
-        
-        return array('completionbookinggroup');
-    }
-
-    /**
-     * Called during validation to see whether some module-specific completion rules are selected.
-     *
-     * @param array $data Input data not yet validated.
-     * @return bool True if one or more rules is enabled, false if none are.
-     */
-    public function completion_rule_enabled($data) {
-        return !empty($data['completionbooking']);
-    }
-
-    /**
-     * Validação personalizada do formulário
-     *
-     * @param array $data array of ("fieldname"=>value) of submitted data
-     * @param array $files array of uploaded files "element_name"=>tmp_file_path
-     * @return array of "element_name"=>"error_description" if there are errors,
-     *         or an empty array if everything is OK (true allowed for backwards compatibility too).
-     */
-    public function validation($data, $files) {
-        $errors = parent::validation($data, $files);
-
-        // Validar cada slot de horário.
-        for ($i = 0; $i < $data['slot_repeats']; $i++) {
-            if (!empty($data['slotenabled'][$i])) {
-                // Verifica se o horário final é posterior ao inicial.
-                if ($data['slotstart'][$i] >= $data['slotend'][$i]) {
-                    $errors["slotend[$i]"] = get_string('endtimebeforestart', 'mod_agendar');
-                }
-
-                // Verifica se há sobreposição com outros horários.
-                for ($j = 0; $j < $data['slot_repeats']; $j++) {
-                    if ($i != $j && !empty($data['slotenabled'][$j])) {
-                        if (($data['slotstart'][$i] >= $data['slotstart'][$j] && 
-                             $data['slotstart'][$i] < $data['slotend'][$j]) ||
-                            ($data['slotend'][$i] > $data['slotstart'][$j] && 
-                             $data['slotend'][$i] <= $data['slotend'][$j])) {
-                            $errors["slotstart[$i]"] = get_string('slotoverlap', 'mod_agendar');
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Get data for this form
-     *
-     * @return object
-     */
-    public function get_data() {
-        $data = parent::get_data();
-        if (!$data) {
-            return false;
-        }
-        
-        // Ensure completion checkbox data is properly handled
-        if (!empty($data->completionunlocked)) {
-            // Auto-completion data may not be in the form
-            $autocompletion = !empty($data->completion) && $data->completion == COMPLETION_TRACKING_AUTOMATIC;
-            if (empty($data->completionbooking) && $autocompletion) {
-                // Disable auto-completion if no rules are set
-                $data->completion = COMPLETION_TRACKING_MANUAL;
-            }
-        }
-        
-        return $data;
     }
 }

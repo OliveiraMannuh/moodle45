@@ -25,65 +25,77 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Schedule';
+defined('MOODLE_INTERNAL') || die();
+
 $string['modulename'] = 'Schedule';
 $string['modulenameplural'] = 'Schedules';
-$string['modulename_help'] = 'The Schedule activity module enables a teacher to schedule appointments
-with individual students or groups of students.';
-$string['agendarfieldset'] = 'Schedule settings';
+$string['modulename_help'] = 'The schedule activity allows teachers to create available time slots for students to book meetings, consultations, presentations or other activities.';
+$string['pluginname'] = 'Schedule';
+$string['pluginadministration'] = 'Schedule administration';
+
+// Capabilities
+$string['agendar:addinstance'] = 'Add a new schedule activity';
+$string['agendar:view'] = 'View schedule activity';
+$string['agendar:book'] = 'Make bookings';
+$string['agendar:manageslots'] = 'Manage available time slots';
+$string['agendar:viewallbookings'] = 'View all bookings';
+
+// Form strings
 $string['agendarname'] = 'Schedule name';
-$string['agendarname_help'] = 'Enter the name of the schedule.';
-$string['agendar'] = 'Schedule';
-$string['agendarintro'] = 'Description';
-$string['agendarintro_help'] = 'Enter the description of the schedule.';
-$string['agendarclose'] = 'Closing date';
-$string['agendarclose_help'] = 'Enter the closing date of the schedule.';
-$string['agendaropen'] = 'Opening date';
-$string['agendaropen_help'] = 'Enter the opening date of the schedule.';
-$string['agendardefault'] = 'Default';
-$string['agendardefault_help'] = 'Select whether the schedule will be open or closed by default.';
-$string['noagendarinstances'] = 'No schedules have been created in this course.';
-$string['agendar:addinstance'] = 'Add a new schedule';
-$string['agendar:view'] = 'View schedule';
-$string['privacy:metadata'] = 'The Schedule plugin does not store any personal data.';
-$string['agendamentoname'] = 'Schedule name';
-$string['agendamentosettings'] = 'Schedule settings';
-$string['agendamentofieldset'] = 'Schedule settings';
-$string['agendamentoclose'] = 'Closing date';
-$string['agendaropen'] = 'Opening date';
-$string['agendardefault'] = 'Default';
-$string['agendarintro'] = 'Description';
-$string['agendarname'] = 'Schedule name';
-$string['noagendarinstances'] = 'No schedules have been created in this course.';
-$string['agendar'] = 'Schedule';
-$string['name'] = 'Nome do agendamento';
-$string['availabletimes'] = 'Horários disponíveis';
-$string['slotstart'] = 'Início do horário';
-$string['slotend'] = 'Fim do horário';
-$string['maxparticipants'] = 'Máximo de participantes';
-$string['enabled'] = 'Horário ativo';
-$string['removeslot'] = 'Remover horário';
-$string['addmoreslots'] = 'Adicionar mais horários';
-$string['endtimebeforestart'] = 'O horário final deve ser posterior ao horário inicial';
-$string['slotoverlap'] = 'Este horário se sobrepõe a outro horário já definido';
-$string['completionbooking'] = 'O aluno deve fazer um agendamento para concluir esta atividade';
-$string['completionbookingdesc'] = 'O aluno deve fazer um agendamento para concluir esta atividade';
-$string['completionbooking'] = 'O estudante deve fazer um agendamento';
-$string['completionbookinggroup'] = 'Requerer agendamento';
-$string['completionbooking_help'] = 'Se habilitado, a atividade será considerada completa quando o estudante fizer um agendamento em qualquer slot disponível.';
-$string['booking'] = 'Agendamento';
-$string['bookings'] = 'Agendamentos';
-$string['makebooking'] = 'Fazer agendamento';
-$string['bookingconfirmed'] = 'Agendamento confirmado';
-$string['alreadybooked'] = 'Você já possui um agendamento nesta atividade';
-$string['nobookingyet'] = 'Você ainda não fez um agendamento';
-$string['slotfull'] = 'Este horário está lotado';
-$string['availabletimes'] = 'Horários disponíveis';
-$string['slotstart'] = 'Horário de início';
-$string['slotend'] = 'Horário de fim';
-$string['maxparticipants'] = 'Máximo de participantes';
-$string['enabled'] = 'Habilitado';
-$string['removeslot'] = 'Remover horário';
-$string['addmoreslots'] = 'Adicionar mais horários';
-$string['endtimebeforestart'] = 'O horário de fim deve ser posterior ao horário de início';
-$string['slotoverlap'] = 'Este horário se sobrepõe a outro horário já definido';
+$string['bookingsettings'] = 'Booking settings';
+$string['maxbookingsperuser'] = 'Maximum bookings per user';
+$string['maxbookingsperuser_help'] = 'Maximum number of slots each user can book';
+$string['allowcancellation'] = 'Allow cancellations';
+$string['allowcancellation_help'] = 'If enabled, users will be able to cancel their bookings';
+$string['cancellationdeadline'] = 'Cancellation deadline';
+$string['cancellationdeadlinenone'] = 'No deadline';
+$string['emailnotifications'] = 'Email notifications';
+$string['emailnotifications_help'] = 'Send confirmation emails and reminders';
+
+// Slot management
+$string['manageslots'] = 'Manage time slots';
+$string['addslot'] = 'Add time slot';
+$string['starttime'] = 'Start time';
+$string['endtime'] = 'End time';
+$string['maxbookings'] = 'Maximum bookings';
+$string['currentbookings'] = 'Current bookings';
+$string['location'] = 'Location';
+$string['notes'] = 'Notes';
+$string['visible'] = 'Visible';
+$string['datetime'] = 'Date and time';
+$string['availability'] = 'Availability';
+$string['actions'] = 'Actions';
+
+// Booking strings
+$string['book'] = 'Book';
+$string['cancel'] = 'Cancel';
+$string['yourbookings'] = 'Your bookings';
+$string['availableslots'] = 'Available time slots';
+$string['noavailableslots'] = 'No time slots available at the moment';
+$string['maxbookingsreached'] = 'You have reached the maximum number of bookings';
+$string['bookingsuccess'] = 'Booking successful!';
+$string['bookingfailed'] = 'Booking failed';
+$string['cancellationsuccess'] = 'Booking cancelled successfully!';
+$string['cancellationfailed'] = 'Cancellation failed';
+$string['confirmcancel'] = 'Are you sure you want to cancel this booking?';
+$string['bookingtime'] = 'Booking date';
+
+// Slot management messages
+$string['slotadded'] = 'Time slot added successfully';
+$string['slotdeleted'] = 'Time slot deleted successfully';
+$string['slothasbookings'] = 'Cannot delete a time slot that has bookings';
+$string['noslots'] = 'No time slots have been created yet';
+$string['confirmdelete'] = 'Are you sure you want to delete this time slot?';
+$string['viewbookings'] = 'View bookings';
+$string['bookingsfor'] = 'Bookings for';
+
+// Validation messages
+$string['endtimebeforestart'] = 'End time must be after start time';
+$string['starttimepast'] = 'Start time must be in the future';
+$string['maxbookingsmin'] = 'Maximum bookings must be at least 1';
+
+// Events
+$string['eventcoursemoduleviewed'] = 'Schedule module viewed';
+$string['eventslotcreated'] = 'Time slot created';
+$string['eventslotbooked'] = 'Time slot booked';
+$string['eventslotcancelled'] = 'Booking cancelled';

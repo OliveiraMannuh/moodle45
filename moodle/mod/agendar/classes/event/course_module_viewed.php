@@ -15,17 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Prints an instance of mod_agendar.
  *
  * @package     mod_agendar
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component = 'mod_agendar';  // Era: mod_agendamento
-$plugin->version = 2025091100;       // Atualize a versão
-$plugin->requires = 2025091100;      // Moodle 4.5+
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = 'v1.0';
