@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_agendamento';
-$plugin->version = 2024091601; // Updated version for completion feature
+$plugin->version = 2024091602; // Updated version for removing grades and fixing completion
 $plugin->requires = 2024042200; // Moodle 4.5
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.1.0'; // Updated release for completion feature
+$plugin->release = '1.2.0'; // Updated release for grade removal and completion fix

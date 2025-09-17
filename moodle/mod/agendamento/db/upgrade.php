@@ -43,5 +43,30 @@ function xmldb_agendamento_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2024091601, 'agendamento');
     }
     
+    if ($oldversion < 2024091602) {
+        // Remove grade field from agendamento table as it's no longer needed.
+        $table = new xmldb_table('agendamento');
+        $field = new xmldb_field('grade');
+
+        // Conditionally launch drop field grade.
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        // Remove any existing grade items for agendamento activities.
+        require_once($CFG->libdir . '/gradelib.php');
+        
+        // Get all agendamento instances to clean up their grade items.
+        $agendamentos = $DB->get_records('agendamento', null, '', 'id, course');
+        foreach ($agendamentos as $agendamento) {
+            // Delete grade item for this agendamento instance.
+            grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
+                        $agendamento->id, 0, null, array('deleted' => 1));
+        }
+
+        // Agendamento savepoint reached.
+        upgrade_mod_savepoint(true, 2024091602, 'agendamento');
+    }
+    
     return true;
 }

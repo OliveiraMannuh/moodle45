@@ -76,14 +76,6 @@ if ($action === 'book') {
         $completion->update_state($cm, COMPLETION_COMPLETE, $USER->id);
     }
     
-    // Update grades.
-    if ($agendamento->grade > 0) {
-        $grades = new stdClass();
-        $grades->userid = $USER->id;
-        $grades->rawgrade = $agendamento->grade;
-        agendamento_grade_item_update($agendamento, $grades);
-    }
-    
     redirect(new moodle_url('/mod/agendamento/view.php', array('id' => $cm->id)), 
              get_string('bookingsuccess', 'agendamento'), null, \core\output\notification::NOTIFY_SUCCESS);
              
@@ -102,26 +94,15 @@ if ($action === 'book') {
             FROM {agendamento_bookings} b
             JOIN {agendamento_slots} s ON b.slotid = s.id
             WHERE s.agendamento = ? AND b.userid = ?";
-    
+
     $bookingcount = $DB->count_records_sql($sql, array($agendamento->id, $USER->id));
-    
+
     // Update completion based on whether user still has bookings
     $completion = new completion_info($course);
     if ($completion->is_enabled($cm)) {
         if ($bookingcount == 0 && !empty($agendamento->completionbooking)) {
             // No more bookings and completion requires booking - mark as incomplete
             $completion->update_state($cm, COMPLETION_INCOMPLETE, $USER->id);
-        }
-    }
-    
-    // Update grade based on remaining bookings
-    if ($agendamento->grade > 0) {
-        if ($bookingcount == 0) {
-            // Remove grade if no bookings remain
-            $grades = new stdClass();
-            $grades->userid = $USER->id;
-            $grades->rawgrade = null;
-            agendamento_grade_item_update($agendamento, $grades);
         }
     }
     

@@ -55,6 +55,11 @@ class restore_agendamento_activity_structure_step extends restore_activity_struc
             $data->completionbooking = 0;
         }
 
+        // Remove grade field if it exists in old backups (backward compatibility)
+        if (isset($data->grade)) {
+            unset($data->grade);
+        }
+
         // Insert the agendamento record.
         $newitemid = $DB->insert_record('agendamento', $data);
         // Immediately after inserting "activity" record, call this.

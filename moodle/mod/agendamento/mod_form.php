@@ -49,8 +49,8 @@ class mod_agendamento_mod_form extends moodleform_mod {
         // Adding the standard "intro" and "introformat" fields.
         $this->standard_intro_elements();
         
-        // Grade settings.
-        $this->standard_grading_coursemodule_elements();
+        // Removidas as opções de nota (grading elements)
+        // $this->standard_grading_coursemodule_elements();
         
         // Standard coursemodule elements.
         $this->standard_coursemodule_elements();
@@ -106,8 +106,3 @@ class mod_agendamento_mod_form extends moodleform_mod {
         return $data;
     }
 }
-/**
- * This function is called when the instance is deleted.
- * If it returns true, the instance has been deleted properly.
- * If it returns false, deletion has failed and an error message will be displayed.
- */

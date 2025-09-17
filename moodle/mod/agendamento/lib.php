@@ -34,7 +34,7 @@ function agendamento_supports($feature) {
         case FEATURE_SHOW_DESCRIPTION:
             return true;
         case FEATURE_GRADE_HAS_GRADE:
-            return false; // Não mostrar nota na atividade.
+            return false; // Removida opção de notas
         case FEATURE_COMPLETION_TRACKS_VIEWS:
             return true;
         case FEATURE_COMPLETION_HAS_RULES:
@@ -62,8 +62,6 @@ function agendamento_add_instance($agendamento, $mform = null) {
     
     $agendamento->id = $DB->insert_record('agendamento', $agendamento);
     
-    agendamento_grade_item_update($agendamento);
-    
     return $agendamento->id;
 }
 
@@ -82,8 +80,6 @@ function agendamento_update_instance($agendamento, $mform = null) {
     }
     
     $DB->update_record('agendamento', $agendamento);
-    
-    agendamento_grade_item_update($agendamento);
     
     return true;
 }
@@ -110,42 +106,7 @@ function agendamento_delete_instance($id) {
     // Delete the instance.
     $DB->delete_records('agendamento', array('id' => $id));
     
-    agendamento_grade_item_delete($agendamento);
-    
     return true;
-}
-
-/**
- * Create/update grade item.
- */
-function agendamento_grade_item_update($agendamento, $grades = null) {
-    global $CFG;
-    require_once($CFG->libdir . '/gradelib.php');
-    
-    if ($agendamento->grade == 0) {
-        return grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
-                           $agendamento->id, 0, null, array('deleted' => 1));
-    }
-    
-    $item = array();
-    $item['itemname'] = clean_param($agendamento->name, PARAM_NOTAGS);
-    $item['gradetype'] = GRADE_TYPE_VALUE;
-    $item['grademax'] = $agendamento->grade;
-    $item['grademin'] = 0;
-    
-    return grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
-                       $agendamento->id, 0, $grades, $item);
-}
-
-/**
- * Delete grade item.
- */
-function agendamento_grade_item_delete($agendamento) {
-    global $CFG;
-    require_once($CFG->libdir . '/gradelib.php');
-    
-    return grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
-                       $agendamento->id, 0, null, array('deleted' => 1));
 }
 
 /**
@@ -186,53 +147,6 @@ function agendamento_get_completion_state($course, $cm, $userid, $type) {
  */
 function agendamento_completion_get_state($course, $cm, $userid, $type) {
     return agendamento_get_completion_state($course, $cm, $userid, $type);
-}
-
-/**
- * Return grade for given user or all users.
- */
-function agendamento_get_user_grades($agendamento, $userid = 0) {
-    global $DB;
-
-    if ($agendamento->grade == 0) {
-        return array();
-    }
-
-    $params = array($agendamento->id);
-    $usersql = '';
-    if ($userid) {
-        $usersql = ' AND b.userid = ?';
-        $params[] = $userid;
-    }
-
-    $sql = "SELECT b.userid, {$agendamento->grade} as rawgrade, b.timecreated as dategraded
-            FROM {agendamento_bookings} b
-            JOIN {agendamento_slots} s ON b.slotid = s.id
-            WHERE s.agendamento = ? $usersql
-            GROUP BY b.userid, b.timecreated";
-
-    return $DB->get_records_sql($sql, $params);
-}
-
-/**
- * Update grades in central gradebook
- */
-function agendamento_update_grades($agendamento, $userid = 0, $nullifnone = true) {
-    global $CFG;
-    require_once($CFG->libdir . '/gradelib.php');
-
-    if ($agendamento->grade == 0) {
-        agendamento_grade_item_update($agendamento);
-    } else if ($grades = agendamento_get_user_grades($agendamento, $userid)) {
-        agendamento_grade_item_update($agendamento, $grades);
-    } else if ($userid and $nullifnone) {
-        $grade = new stdClass();
-        $grade->userid = $userid;
-        $grade->rawgrade = null;
-        agendamento_grade_item_update($agendamento, $grade);
-    } else {
-        agendamento_grade_item_update($agendamento);
-    }
 }
 
 /**

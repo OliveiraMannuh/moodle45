@@ -32,7 +32,7 @@ class backup_agendamento_activity_structure_step extends backup_activity_structu
 
         // Define each element separated.
         $agendamento = new backup_nested_element('agendamento', ['id'], [
-            'name', 'intro', 'introformat', 'timecreated', 'timemodified', 'grade', 'completionbooking'
+            'name', 'intro', 'introformat', 'timecreated', 'timemodified', 'completionbooking'
         ]);
 
         $slots = new backup_nested_element('slots');
