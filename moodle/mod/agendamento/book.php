@@ -72,7 +72,7 @@ if ($action === 'book') {
     
     // Update completion - This is the key part for automatic completion
     $completion = new completion_info($course);
-    if ($completion->is_enabled($cm)) {
+    if ($completion->is_enabled($cm) && !empty($agendamento->completionbooking)) {
         $completion->update_state($cm, COMPLETION_COMPLETE, $USER->id);
     }
     
@@ -89,20 +89,38 @@ if ($action === 'book') {
     // Cancel booking.
     $DB->delete_records('agendamento_bookings', array('slotid' => $slot->id, 'userid' => $USER->id));
     
-    // Check if user has other bookings for completion.
-    $sql = "SELECT COUNT(b.id)
-            FROM {agendamento_bookings} b
-            JOIN {agendamento_slots} s ON b.slotid = s.id
-            WHERE s.agendamento = ? AND b.userid = ?";
-
-    $bookingcount = $DB->count_records_sql($sql, array($agendamento->id, $USER->id));
-
-    // Update completion based on whether user still has bookings
+    // Update completion state - Check if user still has other bookings
     $completion = new completion_info($course);
-    if ($completion->is_enabled($cm)) {
-        if ($bookingcount == 0 && !empty($agendamento->completionbooking)) {
-            // No more bookings and completion requires booking - mark as incomplete
+    if ($completion->is_enabled($cm) && !empty($agendamento->completionbooking)) {
+        // Check if user has other bookings for this agendamento activity
+        $sql = "SELECT COUNT(b.id)
+                FROM {agendamento_bookings} b
+                JOIN {agendamento_slots} s ON b.slotid = s.id
+                WHERE s.agendamento = ? AND b.userid = ?";
+
+        $remainingbookings = $DB->count_records_sql($sql, array($agendamento->id, $USER->id));
+
+        // If no more bookings and completion requires booking, mark as incomplete
+        if ($remainingbookings == 0) {
+            // Force update completion state to incomplete
             $completion->update_state($cm, COMPLETION_INCOMPLETE, $USER->id);
+            
+            // Also update the completion cache to ensure it's properly reset
+            $completion->internal_get_state($cm, $USER->id, null);
+            
+            // Alternative approach: Reset completion entirely and let it be recalculated
+            $params = array(
+                'coursemoduleid' => $cm->id,
+                'userid' => $USER->id
+            );
+            
+            // Delete existing completion record to force recalculation
+            if ($completionrecord = $DB->get_record('course_modules_completion', $params)) {
+                // Reset completion viewed and completionstate
+                $completionrecord->completionstate = COMPLETION_INCOMPLETE;
+                $completionrecord->timemodified = time();
+                $DB->update_record('course_modules_completion', $completionrecord);
+            }
         }
     }
     

@@ -68,5 +68,71 @@ function xmldb_agendamento_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2024091602, 'agendamento');
     }
     
+    if ($oldversion < 2024091603) {
+        // Fix completion states for users who cancelled all their bookings
+        // but still have the activity marked as complete
+        
+        $sql = "SELECT DISTINCT cm.id as cmid, cm.instance as agendamentoid, cmc.userid, cmc.id as completionid
+                FROM {course_modules} cm
+                JOIN {modules} m ON m.id = cm.module AND m.name = 'agendamento'
+                JOIN {agendamento} a ON a.id = cm.instance
+                JOIN {course_modules_completion} cmc ON cmc.coursemoduleid = cm.id
+                WHERE a.completionbooking = 1
+                AND cmc.completionstate = " . COMPLETION_COMPLETE . "
+                AND NOT EXISTS (
+                    SELECT 1 
+                    FROM {agendamento_bookings} ab
+                    JOIN {agendamento_slots} as2 ON ab.slotid = as2.id
+                    WHERE as2.agendamento = a.id AND ab.userid = cmc.userid
+                )";
+        
+        $incorrectcompletions = $DB->get_records_sql($sql);
+        
+        foreach ($incorrectcompletions as $completion) {
+            // Reset completion state to incomplete
+            $DB->set_field('course_modules_completion', 'completionstate', COMPLETION_INCOMPLETE, 
+                          array('id' => $completion->completionid));
+            $DB->set_field('course_modules_completion', 'timemodified', time(), 
+                          array('id' => $completion->completionid));
+        }
+        
+        // Also fix users who have bookings but are marked as incomplete
+        $sql2 = "SELECT DISTINCT cm.id as cmid, cm.instance as agendamentoid, u.id as userid
+                 FROM {course_modules} cm
+                 JOIN {modules} m ON m.id = cm.module AND m.name = 'agendamento'
+                 JOIN {agendamento} a ON a.id = cm.instance
+                 JOIN {agendamento_slots} as1 ON as1.agendamento = a.id
+                 JOIN {agendamento_bookings} ab ON ab.slotid = as1.id
+                 JOIN {user} u ON u.id = ab.userid
+                 LEFT JOIN {course_modules_completion} cmc ON cmc.coursemoduleid = cm.id AND cmc.userid = u.id
+                 WHERE a.completionbooking = 1
+                 AND (cmc.completionstate IS NULL OR cmc.completionstate != " . COMPLETION_COMPLETE . ")";
+        
+        $missingcompletions = $DB->get_records_sql($sql2);
+        
+        foreach ($missingcompletions as $missing) {
+            // Check if completion record exists
+            $params = array('coursemoduleid' => $missing->cmid, 'userid' => $missing->userid);
+            if ($existingcompletion = $DB->get_record('course_modules_completion', $params)) {
+                // Update existing record
+                $existingcompletion->completionstate = COMPLETION_COMPLETE;
+                $existingcompletion->timemodified = time();
+                $DB->update_record('course_modules_completion', $existingcompletion);
+            } else {
+                // Create new completion record
+                $newcompletion = new stdClass();
+                $newcompletion->coursemoduleid = $missing->cmid;
+                $newcompletion->userid = $missing->userid;
+                $newcompletion->completionstate = COMPLETION_COMPLETE;
+                $newcompletion->viewed = 1;
+                $newcompletion->timemodified = time();
+                $DB->insert_record('course_modules_completion', $newcompletion);
+            }
+        }
+        
+        // Agendamento savepoint reached.
+        upgrade_mod_savepoint(true, 2024091603, 'agendamento');
+    }
+    
     return true;
 }

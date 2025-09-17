@@ -119,19 +119,20 @@ function agendamento_get_completion_state($course, $cm, $userid, $type) {
     // Get agendamento instance.
     $agendamento = $DB->get_record('agendamento', array('id' => $cm->instance), '*', MUST_EXIST);
     
-    // If completion booking is not required, return true (completed by view or other conditions)
+    // If completion booking is not required, return the default type
     if (empty($agendamento->completionbooking)) {
-        return $type; // Return the type as completion state
+        return $type;
     }
     
-    // Check if user has booked any slot.
+    // Check if user has any active bookings for this agendamento
     $sql = "SELECT COUNT(b.id)
             FROM {agendamento_bookings} b
             JOIN {agendamento_slots} s ON b.slotid = s.id
-            WHERE s.agendamento = ? AND b.userid = ?"; // Ensure the booking is not cancelled.
+            WHERE s.agendamento = ? AND b.userid = ?";
 
     $bookingcount = $DB->count_records_sql($sql, array($agendamento->id, $userid));
     
+    // Return true if user has at least one booking, false otherwise
     return $bookingcount > 0;
 }
 
