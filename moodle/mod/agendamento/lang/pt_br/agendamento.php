@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Prints an instance of mod_agendar.
+ * Portuguese (Brazil) language strings for mod_agendamento.
  *
- * @package     mod_agendar
+ * @package     mod_agendamento
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -62,14 +62,9 @@ $string['privacy:metadata:agendamento_bookings:slotid'] = 'ID do horário agenda
 $string['privacy:metadata:agendamento_bookings:userid'] = 'ID do usuário que fez o agendamento';
 $string['privacy:metadata:agendamento_bookings:timecreated'] = 'Hora em que o agendamento foi criado';
 $string['noagendamentos'] = 'Não há agendamentos neste curso';
-$string['slotsaved'] = 'Horário salvo com sucesso';
-$string['slotdeleted'] = 'Horário excluído com sucesso';
-$string['confirmdelete'] = 'Tem certeza de que deseja excluir este horário?';
-$string['endtimebeforestart'] = 'O horário de término deve ser após o horário de início';
-$string['invalidmaxparticipants'] = 'O máximo de participantes deve ser pelo menos 1';
-$string['eventcoursemoduleviewed'] = 'Módulo do curso visualizado';
 $string['invalidslot'] = 'Horário inválido';
 $string['invalidaction'] = 'Ação inválida';
 $string['completionbooking'] = 'O aluno deve fazer pelo menos um agendamento';
 $string['completionbookinggroup'] = 'Exigir agendamento';
 $string['completionbookinggroup_help'] = 'Se habilitado, a atividade será marcada como concluída quando o aluno fizer pelo menos um agendamento.';
+$string['completiondetail:booking'] = 'Fazer um agendamento: {$a}';

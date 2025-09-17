@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Prints an instance of mod_agendar.
+ * Backup steps for mod_agendamento.
  *
- * @package     mod_agendar
+ * @package     mod_agendamento
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -32,7 +32,7 @@ class backup_agendamento_activity_structure_step extends backup_activity_structu
 
         // Define each element separated.
         $agendamento = new backup_nested_element('agendamento', ['id'], [
-            'name', 'intro', 'introformat', 'timecreated', 'timemodified', 'grade'
+            'name', 'intro', 'introformat', 'timecreated', 'timemodified', 'grade', 'completionbooking'
         ]);
 
         $slots = new backup_nested_element('slots');

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Prints an instance of mod_agendar.
+ * Library of interface functions and constants.
  *
- * @package     mod_agendar
+ * @package     mod_agendamento
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -34,9 +34,9 @@ function agendamento_supports($feature) {
         case FEATURE_SHOW_DESCRIPTION:
             return true;
         case FEATURE_GRADE_HAS_GRADE:
-            return false; // retirada da opção de nota na atividade.
+            return false; // Não mostrar nota na atividade.
         case FEATURE_COMPLETION_TRACKS_VIEWS:
-            return true; // marca como concluído quando o usuário apenas visualizar a atividade.
+            return true;
         case FEATURE_COMPLETION_HAS_RULES:
             return true;
         case FEATURE_BACKUP_MOODLE2:
@@ -55,6 +55,11 @@ function agendamento_add_instance($agendamento, $mform = null) {
     $agendamento->timecreated = time();
     $agendamento->timemodified = time();
     
+    // Set default completion requirement if not set
+    if (!isset($agendamento->completionbooking)) {
+        $agendamento->completionbooking = 0;
+    }
+    
     $agendamento->id = $DB->insert_record('agendamento', $agendamento);
     
     agendamento_grade_item_update($agendamento);
@@ -70,6 +75,11 @@ function agendamento_update_instance($agendamento, $mform = null) {
     
     $agendamento->timemodified = time();
     $agendamento->id = $agendamento->instance;
+    
+    // Set default completion requirement if not set
+    if (!isset($agendamento->completionbooking)) {
+        $agendamento->completionbooking = 0;
+    }
     
     $DB->update_record('agendamento', $agendamento);
     
@@ -112,14 +122,19 @@ function agendamento_grade_item_update($agendamento, $grades = null) {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
     
+    if ($agendamento->grade == 0) {
+        return grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
+                           $agendamento->id, 0, null, array('deleted' => 1));
+    }
+    
     $item = array();
     $item['itemname'] = clean_param($agendamento->name, PARAM_NOTAGS);
     $item['gradetype'] = GRADE_TYPE_VALUE;
     $item['grademax'] = $agendamento->grade;
     $item['grademin'] = 0;
     
-    grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
-                 $agendamento->id, 0, $grades, $item);
+    return grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
+                       $agendamento->id, 0, $grades, $item);
 }
 
 /**
@@ -129,12 +144,13 @@ function agendamento_grade_item_delete($agendamento) {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
     
-    grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
-                 $agendamento->id, 0, null, array('deleted' => 1));
+    return grade_update('mod/agendamento', $agendamento->course, 'mod', 'agendamento',
+                       $agendamento->id, 0, null, array('deleted' => 1));
 }
 
 /**
  * Get completion state.
+ * This function is called to determine if the activity should be marked as complete.
  */
 function agendamento_get_completion_state($course, $cm, $userid, $type) {
     global $DB;
@@ -142,15 +158,34 @@ function agendamento_get_completion_state($course, $cm, $userid, $type) {
     // Get agendamento instance.
     $agendamento = $DB->get_record('agendamento', array('id' => $cm->instance), '*', MUST_EXIST);
     
+    // If completion booking is not required, return true (completed by view or other conditions)
+    if (empty($agendamento->completionbooking)) {
+        return $type; // Return the type as completion state
+    }
+    
     // Check if user has booked any slot.
     $sql = "SELECT COUNT(b.id)
             FROM {agendamento_bookings} b
             JOIN {agendamento_slots} s ON b.slotid = s.id
-            WHERE s.agendamento = ? AND b.userid = ?";
-    
+            WHERE s.agendamento = ? AND b.userid = ?"; // Ensure the booking is not cancelled.
+
     $bookingcount = $DB->count_records_sql($sql, array($agendamento->id, $userid));
     
     return $bookingcount > 0;
+}
+
+/**
+ * Obtains the automatic completion state for this module based on any conditions
+ * in agendamento settings.
+ *
+ * @param object $course Course
+ * @param object $cm Course-module
+ * @param int $userid User ID
+ * @param bool $type Type of comparison (or/and; can be used as return value if no conditions)
+ * @return bool True if completed, false if not, $type if conditions not set.
+ */
+function agendamento_completion_get_state($course, $cm, $userid, $type) {
+    return agendamento_get_completion_state($course, $cm, $userid, $type);
 }
 
 /**
@@ -158,6 +193,10 @@ function agendamento_get_completion_state($course, $cm, $userid, $type) {
  */
 function agendamento_get_user_grades($agendamento, $userid = 0) {
     global $DB;
+
+    if ($agendamento->grade == 0) {
+        return array();
+    }
 
     $params = array($agendamento->id);
     $usersql = '';
@@ -170,7 +209,7 @@ function agendamento_get_user_grades($agendamento, $userid = 0) {
             FROM {agendamento_bookings} b
             JOIN {agendamento_slots} s ON b.slotid = s.id
             WHERE s.agendamento = ? $usersql
-            GROUP BY b.userid";
+            GROUP BY b.userid, b.timecreated";
 
     return $DB->get_records_sql($sql, $params);
 }
@@ -185,9 +224,6 @@ function agendamento_update_grades($agendamento, $userid = 0, $nullifnone = true
     if ($agendamento->grade == 0) {
         agendamento_grade_item_update($agendamento);
     } else if ($grades = agendamento_get_user_grades($agendamento, $userid)) {
-        foreach ($grades as $grade) {
-            $grades[$grade->userid] = $grade;
-        }
         agendamento_grade_item_update($agendamento, $grades);
     } else if ($userid and $nullifnone) {
         $grade = new stdClass();
@@ -196,5 +232,44 @@ function agendamento_update_grades($agendamento, $userid = 0, $nullifnone = true
         agendamento_grade_item_update($agendamento, $grade);
     } else {
         agendamento_grade_item_update($agendamento);
+    }
+}
+
+/**
+ * This function extends the settings navigation block for the site.
+ *
+ * It is safe to rely on PAGE here as we will only ever be within the module
+ * context when this is called
+ *
+ * @param settings_navigation $settings
+ * @param navigation_node $agendamentonode
+ * @return void
+ */
+function agendamento_extend_settings_navigation($settings, $agendamentonode) {
+    global $PAGE;
+
+    // We want to add these new nodes after the Edit settings node, and before the
+    // Locally assigned roles node. Of course, both of those are controlled by capabilities.
+    $keys = $agendamentonode->get_children_key_list();
+    $beforekey = null;
+    $i = array_search('modedit', $keys);
+    if ($i === false and array_key_exists(0, $keys)) {
+        $beforekey = $keys[0];
+    } else if (array_key_exists($i + 1, $keys)) {
+        $beforekey = $keys[$i + 1];
+    }
+
+    $context = $PAGE->cm->context;
+    if (has_capability('mod/agendamento:manageslots', $context)) {
+        $url = new moodle_url('/mod/agendamento/manageslots.php', array('id' => $PAGE->cm->id));
+        $node = navigation_node::create(
+            get_string('manageslots', 'agendamento'),
+            $url,
+            navigation_node::TYPE_SETTING,
+            null,
+            'mod_agendamento_manageslots',
+            new pix_icon('i/settings', '')
+        );
+        $agendamentonode->add_node($node, $beforekey);
     }
 }

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Prints an instance of mod_agendar.
+ * The main module configuration form.
  *
- * @package     mod_agendar
+ * @package     mod_agendamento
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -58,4 +58,56 @@ class mod_agendamento_mod_form extends moodleform_mod {
         // Add standard buttons.
         $this->add_action_buttons();
     }
+    
+    /**
+     * Add completion rules to the form.
+     *
+     * @return array Array of string IDs of added items, empty array if none
+     */
+    public function add_completion_rules() {
+        $mform =& $this->_form;
+
+        $group = array();
+        $group[] = $mform->createElement('checkbox', 'completionbooking', '', get_string('completionbooking', 'agendamento'));
+        $mform->addGroup($group, 'completionbookinggroup', get_string('completionbookinggroup', 'agendamento'), array(' '), false);
+        $mform->addHelpButton('completionbookinggroup', 'completionbookinggroup', 'agendamento');
+
+        return array('completionbookinggroup');
+    }
+
+    /**
+     * Called during validation to see whether some module-specific completion rules are selected.
+     *
+     * @param array $data Input data not yet validated.
+     * @return bool True if one or more rules is enabled, false if none are.
+     */
+    public function completion_rule_enabled($data) {
+        return !empty($data['completionbooking']);
+    }
+
+    /**
+     * Get data from the form.
+     * This method is called to retrieve form data.
+     */
+    public function get_data() {
+        $data = parent::get_data();
+        if (!$data) {
+            return false;
+        }
+
+        // Turn off completion settings if the checkboxes aren't ticked.
+        if (!empty($data->completionunlocked)) {
+            $autocompletion = !empty($data->completion) && $data->completion == COMPLETION_TRACKING_AUTOMATIC;
+            if (empty($data->completionbooking) || !$autocompletion) {
+                $data->completionbooking = 0;
+            }
+        }
+
+        return $data;
+    }
 }
+/**
+ * This function is called when the instance is deleted.
+ * If it returns true, the instance has been deleted properly.
+ * If it returns false, deletion has failed and an error message will be displayed.
+ */

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Prints an instance of mod_agendar.
+ * Book or cancel booking for a time slot.
  *
- * @package     mod_agendar
+ * @package     mod_agendamento
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -70,9 +70,11 @@ if ($action === 'book') {
     
     $DB->insert_record('agendamento_bookings', $booking);
     
-    // Update completion.
+    // Update completion - This is the key part for automatic completion
     $completion = new completion_info($course);
-    $completion->update_state($cm, COMPLETION_COMPLETE, $USER->id);
+    if ($completion->is_enabled($cm)) {
+        $completion->update_state($cm, COMPLETION_COMPLETE, $USER->id);
+    }
     
     // Update grades.
     if ($agendamento->grade > 0) {
@@ -103,13 +105,19 @@ if ($action === 'book') {
     
     $bookingcount = $DB->count_records_sql($sql, array($agendamento->id, $USER->id));
     
-    if ($bookingcount == 0) {
-        // Update completion.
-        $completion = new completion_info($course);
-        $completion->update_state($cm, COMPLETION_INCOMPLETE, $USER->id);
-        
-        // Remove grade.
-        if ($agendamento->grade > 0) {
+    // Update completion based on whether user still has bookings
+    $completion = new completion_info($course);
+    if ($completion->is_enabled($cm)) {
+        if ($bookingcount == 0 && !empty($agendamento->completionbooking)) {
+            // No more bookings and completion requires booking - mark as incomplete
+            $completion->update_state($cm, COMPLETION_INCOMPLETE, $USER->id);
+        }
+    }
+    
+    // Update grade based on remaining bookings
+    if ($agendamento->grade > 0) {
+        if ($bookingcount == 0) {
+            // Remove grade if no bookings remain
             $grades = new stdClass();
             $grades->userid = $USER->id;
             $grades->rawgrade = null;

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Prints an instance of mod_agendar.
+ * Database upgrade script for mod_agendamento.
  *
- * @package     mod_agendar
+ * @package     mod_agendamento
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -29,7 +29,19 @@ function xmldb_agendamento_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-    // Add future upgrade steps here if needed.
+    if ($oldversion < 2024091601) {
+        // Define field completionbooking to be added to agendamento.
+        $table = new xmldb_table('agendamento');
+        $field = new xmldb_field('completionbooking', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'grade');
+
+        // Conditionally launch add field completionbooking.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Agendamento savepoint reached.
+        upgrade_mod_savepoint(true, 2024091601, 'agendamento');
+    }
     
     return true;
 }

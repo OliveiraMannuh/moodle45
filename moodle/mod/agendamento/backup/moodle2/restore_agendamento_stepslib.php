@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Prints an instance of mod_agendar.
+ * Restore steps for mod_agendamento.
  *
- * @package     mod_agendar
+ * @package     mod_agendamento
  * @copyright   2025 Oliveira. Mannuh <oliveira.mannuh@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -49,6 +49,11 @@ class restore_agendamento_activity_structure_step extends restore_activity_struc
 
         $data->timecreated = $this->apply_date_offset($data->timecreated);
         $data->timemodified = $this->apply_date_offset($data->timemodified);
+
+        // Handle completion booking field for older backups
+        if (!isset($data->completionbooking)) {
+            $data->completionbooking = 0;
+        }
 
         // Insert the agendamento record.
         $newitemid = $DB->insert_record('agendamento', $data);
