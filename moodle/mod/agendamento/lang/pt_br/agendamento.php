@@ -70,3 +70,6 @@ $string['invalidmaxparticipants'] = 'O máximo de participantes deve ser pelo me
 $string['eventcoursemoduleviewed'] = 'Módulo do curso visualizado';
 $string['invalidslot'] = 'Horário inválido';
 $string['invalidaction'] = 'Ação inválida';
+$string['completionbooking'] = 'O aluno deve fazer pelo menos um agendamento';
+$string['completionbookinggroup'] = 'Exigir agendamento';
+$string['completionbookinggroup_help'] = 'Se habilitado, a atividade será marcada como concluída quando o aluno fizer pelo menos um agendamento.';

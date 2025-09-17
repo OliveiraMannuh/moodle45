@@ -69,3 +69,7 @@ $string['invalidmaxparticipants'] = 'Maximum participants must be at least 1';
 $string['eventcoursemoduleviewed'] = 'Course module viewed';
 $string['invalidslot'] = 'Invalid time slot';
 $string['invalidaction'] = 'Invalid action';
+$string['completionbooking'] = 'Student must make at least one booking';
+$string['completionbookinggroup'] = 'Require booking';
+$string['completionbookinggroup_help'] = 'If enabled, the activity will be marked as complete when the student makes at least one booking.';
+$string['completiondetail:booking'] = 'Make a booking';
