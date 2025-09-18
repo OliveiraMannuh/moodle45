@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_agendamento';
-$plugin->version = 2024091603; // Updated version for fixing completion when cancelling bookings
+$plugin->version = 2024091604; // Updated version for improved completion handling
 $plugin->requires = 2024042200; // Moodle 4.5
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.3.0'; // Updated release for completion cancellation fix
+$plugin->release = '1.3.1'; // Updated release for completion cancellation fix
