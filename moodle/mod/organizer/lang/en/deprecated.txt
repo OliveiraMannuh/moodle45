@@ -1,2 +1,0 @@
-queuesubject,mod_organizer
-queuebody,mod_organizer

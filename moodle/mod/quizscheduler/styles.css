@@ -1,0 +1,50 @@
+.quizscheduler-admin-panel {
+    border-left: 4px solid #007bff;
+    margin-bottom: 20px;
+}
+
+.quizscheduler-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0,0,0,.02);
+}
+
+.btn-group-sm > .btn, .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+
+.quizscheduler-stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+}
+
+.quizscheduler-stat {
+    text-align: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+    min-width: 120px;
+}
+
+.quizscheduler-stat h4 {
+    margin: 0;
+    color: #007bff;
+}
+
+.quizscheduler-stat small {
+    color: #6c757d;
+}
