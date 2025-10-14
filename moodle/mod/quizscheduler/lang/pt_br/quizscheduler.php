@@ -87,13 +87,25 @@ $string['cancelled'] = 'Cancelado';
 // Reports.
 $string['reports'] = 'Relatórios';
 $string['bookingsreport'] = 'Relatório de agendamentos';
+$string['bookingreport'] = 'Relatório de Agendamentos';
+$string['viewreports'] = 'Ver Relatórios';
+$string['filterbyslot'] = 'Filtrar por Horário';
+$string['filterbystatus'] = 'Filtrar por Status';
+$string['allslots'] = 'Todos os horários';
+$string['allstatuses'] = 'Todos os status';
+$string['downloadcsv'] = 'Baixar CSV';
 $string['user'] = 'Usuário';
-$string['timebooked'] = 'Data do agendamento';
+$string['timebooked'] = 'Data do Agendamento';
 $string['actions'] = 'Ações';
 $string['manageslots'] = 'Gerenciar horários';
 $string['addslot'] = 'Adicionar horário';
 $string['editslot'] = 'Editar horário';
 $string['deleteslot'] = 'Excluir horário';
+$string['quizstatus'] = 'Status do Quiz';
+$string['quizcompleted'] = 'Quiz Concluído';
+$string['quizinprogress'] = 'Quiz em Progresso';
+$string['notstarted'] = 'Não iniciado';
+$string['inprogress'] = 'Em Progresso';
 
 // Management strings.
 $string['generateslots'] = 'Gerar horários';
@@ -112,6 +124,7 @@ $string['eventbookingcancelled'] = 'Agendamento cancelado';
 $string['eventcoursemoduleviewed'] = 'Módulo do curso visualizado';
 $string['eventquizcompleted'] = 'Questionário agendado concluído';
 $string['eventscheduledquizstarted'] = 'Questionário agendado iniciado';
+$string['eventslotbooked'] = 'Horário agendado';
 
 // Task strings.
 $string['cleanupexpiredbookings'] = 'Limpeza de agendamentos expirados';
@@ -151,17 +164,12 @@ $string['totalbookings'] = 'Total de agendamentos';
 $string['createslotshelp'] = 'Use o formulário acima para gerar horários para os alunos agendarem.';
 $string['full'] = 'Lotado';
 $string['disabled'] = 'Desabilitado';
-$string['quizstatus'] = 'Status do questionário';
-$string['quizcompleted'] = 'Questionário concluído';
-$string['notstarted'] = 'Não iniciado';
 
 // View page strings.
 $string['yourbookings'] = 'Seus Agendamentos';
-$string['active'] = 'Ativo';
-$string['completed'] = 'Concluído';
-$string['reserved'] = 'reservado(s)';
-$string['alreadybooked'] = 'Já agendado';
-$string['hasactivebooking'] = 'Agendamento ativo existente';
+$string['noavailableslots'] = 'Não há horários disponíveis no momento.';
+$string['datetime'] = 'Data e Hora';
+$string['availability'] = 'Disponibilidade';
 $string['book'] = 'Agendar';
 $string['cancel'] = 'Cancelar';
 $string['bookingsstats'] = 'Agendamentos';
@@ -177,7 +185,25 @@ $string['status_completed'] = 'Concluído';
 $string['status_missed'] = 'Perdido';
 $string['upcoming'] = 'Próximo';
 $string['active'] = 'Ativo';
-$string['completed'] = 'Concluído';
+$string['reserved'] = 'reservado(s)';
+$string['hasactivebooking'] = 'Você possui um agendamento ativo';
+$string['slotpassed'] = 'Horário já passou';
+
+// Rebooking functionality
+$string['activebookingexists'] = 'Você já possui um agendamento ativo. Só é possível agendar um novo horário após o término do atual.';
+$string['youhaveactivebooking'] = 'Você já possui um agendamento ativo. Aguarde a conclusão para fazer um novo agendamento.';
+$string['youcanrebooknow'] = 'Seu agendamento anterior foi concluído. Você pode fazer um novo agendamento.';
+$string['bookingexpired'] = 'Agendamento anterior finalizado';
+$string['activebooking'] = 'Agendamento ativo';
+$string['nomorebookings'] = 'Você já possui um agendamento ativo para este questionário';
+$string['canbook'] = 'Disponível para agendamento';
+$string['bookingerror'] = 'Erro ao agendar horário';
+$string['cancellationsuccess'] = 'Agendamento cancelado com sucesso';
+$string['cancellationerror'] = 'Erro ao cancelar agendamento';
+$string['nobooking'] = 'Nenhum agendamento encontrado para cancelar';
+$string['slotnotavailable'] = 'Este horário não está mais disponível';
+$string['invalidslot'] = 'Horário inválido';
+$string['invalidaction'] = 'Ação inválida';
 
 // Errors.
 $string['error:noquiz'] = 'Nenhum questionário encontrado neste curso.';
@@ -187,6 +213,10 @@ $string['error:cannotcancel'] = 'Não é possível cancelar este agendamento.';
 $string['error:slothasbookings'] = 'Não é possível excluir um horário que possui agendamentos';
 $string['error:invalidvalue'] = 'Valor inválido';
 $string['error:invalidtimes'] = 'Horários de início e fim inválidos';
+$string['error:cannotgenerateslots'] = 'Não foi possível gerar os horários';
+$string['error:cannotdelete'] = 'Não foi possível excluir o horário';
+$string['error:overlappingslots'] = 'Horários não podem se sobrepor';
+$string['error:missingfields'] = 'Campos obrigatórios não preenchidos';
 $string['closebeforeopen'] = 'A data de fechamento deve ser posterior à data de abertura.';
 $string['nopermissions'] = 'Você não tem permissão para acessar este conteúdo.';
 $string['bookingnotfound'] = 'Agendamento não encontrado';
@@ -213,83 +243,31 @@ $string['timeexpired'] = 'Seu tempo agendado expirou';
 $string['quizforcedsubmit'] = 'Questionário foi enviado automaticamente devido ao tempo expirado';
 $string['gotoschedule'] = 'Ir para Agendamento';
 $string['schedulefirst'] = 'Você deve agendar um horário antes de fazer este questionário.';
-
-// Enhanced access control strings.
 $string['quizaccessdenied'] = 'Acesso ao Questionário Negado';
 $string['schedulerequired'] = 'Agendamento Obrigatório';
 $string['accessdenied'] = 'Acesso Negado';
 $string['backtocourse'] = 'Voltar ao Curso';
 
-// Error strings
-$string['error:cannotgenerateslots'] = 'Não foi possível gerar os horários';
-$string['error:cannotdelete'] = 'Não foi possível excluir o horário';
-$string['error:overlappingslots'] = 'Horários não podem se sobrepor';
-$string['error:missingfields'] = 'Campos obrigatórios não preenchidos';
-$string['active'] = 'Ativo';
-
-// E também em português (se existir):
-$string['inprogress'] = 'Em Progresso';
-$string['quizinprogress'] = 'Quiz em Progresso';
-
-// Remover as duplicatas no final e manter apenas estas organizadas:
-
-// Additional strings for rebooking functionality
-$string['yourbookings'] = 'Seus Agendamentos';
-$string['datetime'] = 'Data e Hora';
-$string['availability'] = 'Disponibilidade';
-$string['reserved'] = 'reservado(s)';
-$string['alreadybooked'] = 'Já agendado';
-$string['hasactivebooking'] = 'Você possui um agendamento ativo';
-$string['slotpassed'] = 'Horário já passou';
-$string['bookingsuccess'] = 'Horário agendado com sucesso';
-$string['bookingerror'] = 'Erro ao agendar horário';
-$string['cancellationsuccess'] = 'Agendamento cancelado com sucesso';
-$string['cancellationerror'] = 'Erro ao cancelar agendamento';
-$string['nobooking'] = 'Nenhum agendamento encontrado para cancelar';
-$string['slotnotavailable'] = 'Este horário não está mais disponível';
-$string['invalidslot'] = 'Horário inválido';
-$string['invalidaction'] = 'Ação inválida';
-$string['youhaveactivebooking'] = 'Você já possui um agendamento ativo. Aguarde a conclusão para fazer um novo agendamento.';
-$string['activebookingexists'] = 'Você já possui um agendamento ativo. Só é possível agendar um novo horário após o término do atual.';
-$string['youcanrebooknow'] = 'Seu agendamento anterior foi concluído. Você pode fazer um novo agendamento.';
-$string['bookingexpired'] = 'Agendamento anterior finalizado';
-$string['activebooking'] = 'Agendamento ativo';
-$string['nomorebookings'] = 'Você já possui um agendamento ativo para este questionário';
-$string['canbook'] = 'Disponível para agendamento';
-
-// Report strings
-$string['bookingreport'] = 'Relatório de Agendamentos';
-$string['viewreports'] = 'Ver Relatórios';
-$string['filterbyslot'] = 'Filtrar por Horário';
-$string['filterbystatus'] = 'Filtrar por Status';
-$string['allslots'] = 'Todos os horários';
-$string['allstatuses'] = 'Todos os status';
-$string['downloadcsv'] = 'Baixar CSV';
-$string['nobookings'] = 'Nenhum agendamento encontrado';
-$string['timebooked'] = 'Data do Agendamento';
-$string['quizstatus'] = 'Status do Quiz';
-$string['quizcompleted'] = 'Quiz Concluído';
-$string['quizinprogress'] = 'Quiz em Progresso';
-
-// Notificação por email
-$string['message_provider:slot_booking_confirmation'] = 'Confirmação de agendamento de horário para o Quiz';
-$string['email_booking_subject'] = 'Confirmação de agendamento de horário para o Quiz: {$a->quizname}';
+// Email notifications - CORRIGIDAS
+$string['message_provider:slot_booking_confirmation'] = 'Confirmação de agendamento de horário';
+$string['email_booking_subject'] = 'Confirmação de agendamento: {$a->quizname}';
 $string['email_booking_body'] = 'Olá {$a->studentname},
 
-Você agendou com sucesso um horário para o quiz "{$a->quizname}".
+Seu agendamento para o questionário "{$a->quizname}" foi confirmado com sucesso.
 
-Detalhes do agendamento:
-- Data: {$a->date}
-- Horário: {$a->starttime} - {$a->endtime}
-- Quiz: {$a->quizname}
-- Curso: {$a->coursename}
+Curso: {$a->coursename}
+Data: {$a->date}
+Horário: {$a->starttime} - {$a->endtime}
 
-Por favor, certifique-se de comparecer no horário agendado.
+Por favor, esteja presente no horário agendado.
 
-Atenciosamente,
 {$a->sitename}';
-$string['email_booking_small'] = 'Horário do Quiz agendado: {$a->quizname} em {$a->date} às {$a->starttime}';
+$string['email_booking_small'] = 'Agendamento confirmado: {$a->quizname}';
+$string['add_to_google_calendar'] = 'Adicionar ao Google Calendar';
+$string['ical_attachment_note'] = 'Um arquivo iCalendar (.ics) está anexado a este email. Você pode importá-lo para seu aplicativo de calendário (Google Calendar, Outlook, Apple Calendar, etc.).';
+$string['quiz_scheduled_details'] = 'Questionário agendado: {$a}';
 
+// Pagination
 $string['show'] = 'Mostrar';
 $string['all'] = 'Todos';
 $string['slotsperpage'] = 'horários por página';

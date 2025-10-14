@@ -24,12 +24,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$messageproviders = array(
-    'slot_booking_confirmation' => array(
-        'capability' => 'mod/quizscheduler:view',
-        'defaults' => array(
+$messageproviders = [
+    'slot_booking_confirmation' => [
+        'capability' => 'mod/quizscheduler:book',
+        'defaults' => [
             'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
             'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-        ),
-    ),
-);
+        ],
+    ],
+];

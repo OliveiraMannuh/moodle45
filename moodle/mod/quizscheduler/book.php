@@ -67,35 +67,161 @@ if ($action === 'book') {
             $student = $DB->get_record('user', array('id' => $USER->id));
             $course = $DB->get_record('course', array('id' => $cm->course));
             
-            // Preparar e enviar email
-            //$subject = 'Confirmação de Agendamento: ' . $quizscheduler->name;
-            
-            // Teste título do questionário
-            $quiz = $DB->get_record('quiz', array('id' => $quizscheduler->quizid), '*', MUST_EXIST);
-            $cm_quiz = get_coursemodule_from_instance('quiz', $quiz->id, $course->id);
-            $subject = "Confirmação de Agendamento: " . $quiz->name;
-            $message = "Olá " . fullname($student) . ",\n\n";
-            $message .= "Você se inscreveu com sucesso na avaliação:\n\n";
-            //$message .= "Questinário: " . $quizscheduler->name . "\n";
-            $message .= "Questinário: " . $quiz->name . "\n";
-            $message .= "Data: " . userdate($slot->starttime, '%d/%m/%Y') . "\n";
-            $message .= "Horário: " . userdate($slot->starttime, '%H:%M') . " - " . userdate($slot->endtime, '%H:%M') . "\n";
-            $message .= "Curso: " . $course->fullname . "\n\n";
-            
             // Buscar o quiz associado ao agendamento
             $quiz = $DB->get_record('quiz', array('id' => $quizscheduler->quizid), '*', MUST_EXIST);
             $cm_quiz = get_coursemodule_from_instance('quiz', $quiz->id, $course->id);
             $quizurl = new moodle_url('/mod/quiz/view.php', array('id' => $cm_quiz->id));
             
+            // ============================================
+            // GERAR LINK DO GOOGLE CALENDAR - CORRIGIDO
+            // ============================================
             
-            $message .= "Link do questionário: " . $quizurl . "\n";
-            //$message .= "Link para visualizar agendamentos: " . $viewurl . "\n\n";
+            // Formatar datas no formato correto: YYYYMMDDTHHMMSSZ (UTC)
+            $startdate = gmdate('Ymd\THis\Z', $slot->starttime);
+            $enddate = gmdate('Ymd\THis\Z', $slot->endtime);
+            
+            // Preparar textos (SEM urlencode aqui - será feito no http_build_query)
+            //$event_title = $quiz->name . ' - ' . $course->fullname;
+            $event_title = $quiz->name;
+            $event_details = 'Questionário: ' . $quiz->name . "\n" . 
+                            'Curso: ' . $course->fullname . "\n" .
+                            'Link do quiz: ' . $quizurl->out(false);
+            $event_location = $course->fullname;
+            
+            // Montar URL do Google Calendar
+            // Usar calendar.google.com/calendar/render com os parâmetros corretos
+            $google_calendar_url = 'https://calendar.google.com/calendar/render?' . http_build_query([
+                'action' => 'TEMPLATE',
+                'text' => $event_title,
+                'dates' => $startdate . '/' . $enddate,
+                'details' => $event_details,
+                //'location' => $event_location,
+                'trp' => 'false',
+                'sprop' => 'name:' . $SITE->fullname
+            ], '', '&', PHP_QUERY_RFC3986);
+            
+            // Debug: Log da URL gerada
+            error_log('Google Calendar URL: ' . $google_calendar_url);
+            error_log('Start time: ' . $slot->starttime . ' -> ' . $startdate);
+            error_log('End time: ' . $slot->endtime . ' -> ' . $enddate);
+            
+            // ============================================
+            // MENSAGEM DE EMAIL - VERSÃO TEXTO
+            // ============================================
+            
+            $subject = "Confirmação de Agendamento: " . $quiz->name;
+            
+            $messagetext = "Olá " . fullname($student) . ",\n\n";
+            $messagetext .= "Você se inscreveu com sucesso na avaliação:\n\n";
+            $messagetext .= "Questionário: " . $quiz->name . "\n";
+            $messagetext .= "Data: " . userdate($slot->starttime, '%d/%m/%Y') . "\n";
+            $messagetext .= "Horário: " . userdate($slot->starttime, '%H:%M') . " - " . userdate($slot->endtime, '%H:%M') . "\n";
+            $messagetext .= "Curso: " . $course->fullname . "\n\n";
+            $messagetext .= "Link do questionário: " . $quizurl->out(false) . "\n\n";
+            
+            // Adicionar link do Google Calendar na versão texto
+            $messagetext .= "═══════════════════════════════════════\n";
+            $messagetext .= "📅 ADICIONAR AO GOOGLE CALENDAR\n";
+            $messagetext .= "═══════════════════════════════════════\n\n";
+            $messagetext .= "Clique no link abaixo para adicionar ao seu Google Calendar:\n\n";
+            $messagetext .= $google_calendar_url . "\n\n";
+            $messagetext .= "Ou copie e cole o link acima no seu navegador.\n";
+            $messagetext .= "═══════════════════════════════════════\n\n";
+            
             $supportname = get_config('moodle', 'supportname');
-            $message .= "Atenciosamente,\n" . $supportname . ".";
-            //$message .= "Atenciosamente,\n" . $SITE->fullname;
+            if (empty($supportname)) {
+                $supportname = $SITE->fullname;
+            }
+            $messagetext .= "Atenciosamente,\n" . $supportname . ".";
             
-            // Enviar email
-            $result = email_to_user($student, core_user::get_noreply_user(), $subject, $message);
+            // ============================================
+            // MENSAGEM DE EMAIL - VERSÃO HTML
+            // ============================================
+            
+            $messagehtml = '<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px;">
+                            <h2 style="margin: 0; color: #942037; font-size: 24px;">📋 Confirmação de Agendamento</h2>
+                        </td>
+                    </tr>
+                    
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 0 30px 20px 30px;">
+                            <p>Olá <strong>' . htmlspecialchars(fullname($student)) . '</strong>,</p>
+                            <p>Você se inscreveu com sucesso na avaliação:</p>
+                            
+                            <div style="background-color: #ffeff2; padding: 20px; border-left: 4px solid #942037; margin: 20px 0;">
+                                <p style="margin: 5px 0;"><strong>Questionário:</strong> ' . htmlspecialchars($quiz->name) . '</p>
+                                <p style="margin: 5px 0;"><strong>Data:</strong> ' . userdate($slot->starttime, '%d/%m/%Y') . '</p>
+                                <p style="margin: 5px 0;"><strong>Horário:</strong> ' . userdate($slot->starttime, '%H:%M') . ' - ' . userdate($slot->endtime, '%H:%M') . '</p>
+                                <p style="margin: 5px 0;"><strong>Curso:</strong> ' . htmlspecialchars($course->fullname) . '</p>
+                            </div>
+                            
+                            <p style="margin-top: 20px;">
+                                <a href="' . htmlspecialchars($quizurl->out(false)) . '" 
+                                   style="background-color: #942037; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                                    🔗 Acessar Questionário
+                                </a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Google Calendar Button -->
+                    <tr>
+                        <td align="center" style="padding: 30px; background-color: #f9f9f9; border-top: 2px solid #e0e0e0;">
+                            <p style="margin: 0 0 15px 0; font-size: 16px; color: #333;">
+                                <strong>📅 Adicione este agendamento ao seu calendário:</strong>
+                            </p>
+                            <a href="' . htmlspecialchars($google_calendar_url) . '" 
+                               target="_blank"
+                               style="background-color: #942037; color: white; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">
+                                📅 Adicionar ao Google Calendar
+                            </a>
+                            <p style="margin-top: 15px; font-size: 12px; color: #666;">
+                                Clique no botão acima para adicionar o agendamento ao Google Calendar
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" style="padding: 20px; background-color: #f9f9f9; border-top: 1px solid #e0e0e0; border-radius: 0 0 8px 8px;">
+                            <p style="margin: 0; font-size: 12px; color: #999;">
+                                Atenciosamente,<br>' . htmlspecialchars($supportname) . '
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>';
+            
+            // ============================================
+            // ENVIAR EMAIL
+            // ============================================
+            
+            // Enviar email com versão HTML e texto
+            $result = email_to_user(
+                $student, 
+                core_user::get_noreply_user(), 
+                $subject, 
+                $messagetext,  // Versão texto
+                $messagehtml   // Versão HTML
+            );
             
             // Log para debug
             if (!$result) {

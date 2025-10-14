@@ -278,24 +278,24 @@ $string['hasactivebooking'] = 'You have an active booking';
 
 // Email notifications
 $string['message_provider:slot_booking_confirmation'] = 'Quiz slot booking confirmation';
-$string['email_booking_subject'] = 'Quiz slot booking confirmation: {$a->quizname}';
-$string['email_booking_body'] = 'Hi {$a->studentname},
+$string['email_booking_subject'] = 'Quiz booking confirmation: {$a->quizname}';
+$string['email_booking_body'] = 'Hello {$a->studentname},
 
-You have successfully booked a slot for the quiz "{$a->quizname}".
+Your booking for the quiz "{$a->quizname}" has been confirmed.
 
-Booking details:
-- Date: {$a->date}
-- Time: {$a->starttime} - {$a->endtime}
-- Quiz: {$a->quizname}
-- Course: {$a->coursename}
+Course: {$a->coursename}
+Date: {$a->date}
+Time: {$a->starttime} - {$a->endtime}
 
-Please make sure to attend at the scheduled time.
+Please arrive on time.
 
-Best regards,
 {$a->sitename}';
-$string['email_booking_small'] = 'Quiz slot booked: {$a->quizname} on {$a->date} at {$a->starttime}';
+$string['email_booking_small'] = 'Quiz booking confirmed: {$a->quizname}';
+$string['ical_attachment_note'] = 'An iCalendar file (.ics) is attached to this email. You can import it into your calendar application (Google Calendar, Outlook, Apple Calendar, etc.).';
 
 $string['show'] = 'Show';
 $string['all'] = 'All';
 $string['slotsperpage'] = 'slots per page';
 $string['showingslots'] = 'Showing {$a->start} to {$a->end} of {$a->total} slots';
+$string['add_to_google_calendar'] = 'Add to Google Calendar';
+$string['quiz_scheduled_details'] = 'Quiz scheduled: {$a}';
