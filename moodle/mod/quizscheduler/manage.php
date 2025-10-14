@@ -30,6 +30,10 @@ require_once(__DIR__ . '/classes/manager.php');
 $id = required_param('id', PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHA);
 
+// Adicionar parâmetros de paginação
+$page = optional_param('page', 0, PARAM_INT);
+$perpage = optional_param('perpage', 10, PARAM_INT);
+
 $cm = get_coursemodule_from_id('quizscheduler', $id, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
 $moduleinstance = $DB->get_record('quizscheduler', array('id' => $cm->instance), '*', MUST_EXIST);
@@ -39,7 +43,11 @@ require_login($course, true, $cm);
 $modulecontext = context_module::instance($cm->id);
 require_capability('mod/quizscheduler:manageslots', $modulecontext);
 
-$PAGE->set_url('/mod/quizscheduler/manage.php', array('id' => $cm->id));
+$PAGE->set_url('/mod/quizscheduler/manage.php', array(
+    'id' => $cm->id, 
+    'page' => $page, 
+    'perpage' => $perpage
+));
 $PAGE->set_title(get_string('manageslots', 'mod_quizscheduler'));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
@@ -196,14 +204,78 @@ echo html_writer::empty_tag('input', array(
 echo html_writer::end_tag('form');
 echo $OUTPUT->box_end();
 
-// Current slots.
+// Current slots - COM PAGINAÇÃO
 echo html_writer::tag('h4', get_string('currentslots', 'mod_quizscheduler'));
 
-$slots = mod_quizscheduler\manager::get_all_slots($moduleinstance->id);
+// Obter todos os slots
+$allslots = mod_quizscheduler\manager::get_all_slots($moduleinstance->id);
+$totalslots = count($allslots);
 
-if (empty($slots)) {
+// Aplicar paginação
+$offset = $page * $perpage;
+if ($perpage > 0) {
+    $slots = array_slice($allslots, $offset, $perpage);
+} else {
+    $slots = $allslots; // Mostrar todos
+}
+
+if (empty($allslots)) {
     echo $OUTPUT->box(get_string('noslots', 'mod_quizscheduler'), 'generalbox');
 } else {
+    // Controles de paginação ANTES da tabela
+    echo html_writer::start_div('scheduling-controls-wrapper mb-3');
+    
+    // Controle de itens por página
+    echo html_writer::start_div('items-per-page-control');
+    echo html_writer::start_tag('form', array(
+        'method' => 'get',
+        'action' => $PAGE->url->out_omit_querystring(),
+        'id' => 'perpage-form',
+        'class' => 'd-inline'
+    ));
+    echo html_writer::empty_tag('input', array('type' => 'hidden', 'name' => 'id', 'value' => $cm->id));
+    
+    echo html_writer::tag('label', get_string('show', 'quizscheduler') . ': ', array('for' => 'perpage-select'));
+    
+    $perpageoptions = array(
+        5 => '5',
+        10 => '10',
+        20 => '20',
+        50 => '50',
+        100 => '100',
+        0 => get_string('all', 'quizscheduler')
+    );
+    
+    echo html_writer::select($perpageoptions, 'perpage', $perpage, false, array(
+        'id' => 'perpage-select',
+        'class' => 'custom-select',
+        'onchange' => 'this.form.submit()'
+    ));
+    
+    echo ' ' . get_string('slotsperpage', 'quizscheduler');
+    echo html_writer::end_tag('form');
+    echo html_writer::end_div();
+    
+    // Informação de registros
+    if ($totalslots > 0) {
+        $start = $offset + 1;
+        $end = min($offset + $perpage, $totalslots);
+        if ($perpage == 0) {
+            $end = $totalslots;
+            $start = 1;
+        }
+        echo html_writer::start_div('slots-info');
+        echo get_string('showingslots', 'quizscheduler', array(
+            'start' => $start,
+            'end' => $end,
+            'total' => $totalslots
+        ));
+        echo html_writer::end_div();
+    }
+    
+    echo html_writer::end_div();
+    
+    // Tabela de horários
     echo html_writer::start_tag('div', array('class' => 'table-responsive'));
     echo html_writer::start_tag('table', array('class' => 'table table-striped'));
     
@@ -220,7 +292,6 @@ if (empty($slots)) {
     echo html_writer::start_tag('tbody');
     foreach ($slots as $slot) {
         echo html_writer::start_tag('tr');
-        
         echo html_writer::tag('td', userdate($slot->starttime, get_string('strftimedaydatetime')));
         echo html_writer::tag('td', userdate($slot->endtime, get_string('strftimetime')));
         echo html_writer::tag('td', $slot->maxparticipants);
@@ -242,22 +313,23 @@ if (empty($slots)) {
                 )
             );
         }
-        echo html_writer::tag('td', $actions);
         
+        echo html_writer::tag('td', $actions);
         echo html_writer::end_tag('tr');
     }
     echo html_writer::end_tag('tbody');
+    
     echo html_writer::end_tag('table');
     echo html_writer::end_tag('div');
+    
+    // Paginação APÓS a tabela
+    if ($perpage > 0 && $totalslots > $perpage) {
+        $baseurl = new moodle_url('/mod/quizscheduler/manage.php', array(
+            'id' => $cm->id,
+            'perpage' => $perpage
+        ));
+        echo $OUTPUT->paging_bar($totalslots, $page, $perpage, $baseurl);
+    }
 }
-
-echo html_writer::div(
-    html_writer::link(
-        new moodle_url('/mod/quizscheduler/view.php', array('id' => $cm->id)),
-        get_string('back', 'mod_quizscheduler'),
-        array('class' => 'btn btn-secondary')
-    ),
-    'mt-3'
-);
 
 echo $OUTPUT->footer();

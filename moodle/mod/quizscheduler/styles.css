@@ -69,7 +69,7 @@
 }
 
 .items-per-page-control label {
-    margin: 0;
+    margin: 5px; /*atualizado*/
     font-weight: 500;
 }
 
@@ -79,24 +79,29 @@
     border-radius: 4px;
     background-color: white;
     cursor: pointer;
-    font-size: 14px;
-    transition: border-color 0.15s ease-in-out;
-}
-
-#perpage-select:hover {
-    border-color: #0f6cbf;
-}
-
-#perpage-select:focus {
-    border-color: #0f6cbf;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(15, 108, 191, 0.25);
+    min-width: 80px;
 }
 
 .slots-info {
-    color: #495057;
+    color: #6c757d;
     font-size: 14px;
-    font-weight: 500;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .scheduling-controls-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .items-per-page-control {
+        width: 100%;
+    }
+    
+    .slots-info {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 /* Estilização da paginação */
