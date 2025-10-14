@@ -25,6 +25,18 @@
     border-radius: 0.2rem;
 }
 
+.btn-group>.btn:not(:first-child) {
+    margin-left: 0.5rem !important;
+    border-top-left-radius: .5rem !important;
+    border-bottom-left-radius: .5rem !important;
+
+}
+
+.btn-group>.btn:not(:last-child):not(.dropdown-toggle), .btn-group>.btn-group:not(:last-child)>.btn {
+    border-top-right-radius: .5rem !important;
+    border-bottom-right-radius: .5rem !important;
+}
+
 .quizscheduler-stats {
     display: flex;
     justify-content: space-around;

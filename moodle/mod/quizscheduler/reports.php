@@ -216,7 +216,7 @@ $sql = "SELECT b.id, b.timebooked,
         LEFT JOIN {quiz_attempts} qa ON qa.quiz = ? AND qa.userid = u.id 
             AND qa.id = (SELECT MAX(id) FROM {quiz_attempts} qa2 WHERE qa2.quiz = qa.quiz AND qa2.userid = qa.userid)
         WHERE $sqlwhere
-        ORDER BY s.starttime ASC, u.lastname ASC, u.firstname ASC";
+        ORDER BY s.starttime DESC, b.timebooked DESC, u.lastname ASC, u.firstname ASC";
 
 $allparams = array_merge(array(time(), time(), $moduleinstance->quizid, $moduleinstance->quizid), $params);
 $bookings = $DB->get_records_sql($sql, $allparams);

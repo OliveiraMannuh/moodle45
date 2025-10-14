@@ -119,6 +119,13 @@ echo $OUTPUT->header();
 
 echo $OUTPUT->heading(get_string('manageslots', 'mod_quizscheduler'));
 
+// Navigation.
+$viewurl = new moodle_url('/mod/quizscheduler/view.php', array('id' => $cm->id));
+echo html_writer::div(
+    html_writer::link($viewurl, get_string('back'), array('class' => 'btn btn-secondary')),
+    'mb-3'
+);
+
 // Slot generation form.
 echo $OUTPUT->box_start('generalbox');
 echo html_writer::tag('h4', get_string('generateslots', 'mod_quizscheduler'));
