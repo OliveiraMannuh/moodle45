@@ -159,7 +159,7 @@ if (!empty($allUserBookings)) {
 // CORREÇÃO: Obter slots disponíveis diretamente do banco de dados
 $allslots = $DB->get_records('quizscheduler_slots', 
     array('quizschedulerid' => $moduleinstance->id), 
-    'starttime DESC'
+    'starttime DESC'  // Já está ordenando por mais recente primeiro
 );
 
 // Contar total de slots

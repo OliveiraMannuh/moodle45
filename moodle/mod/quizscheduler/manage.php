@@ -207,8 +207,19 @@ echo $OUTPUT->box_end();
 // Current slots - COM PAGINAÇÃO
 echo html_writer::tag('h4', get_string('currentslots', 'mod_quizscheduler'));
 
-// Obter todos os slots
-$allslots = mod_quizscheduler\manager::get_all_slots($moduleinstance->id);
+// Obter todos os slots ORDENADOS por data mais recente primeiro
+$allslots = $DB->get_records('quizscheduler_slots', 
+    array('quizschedulerid' => $moduleinstance->id), 
+    'starttime DESC'  // Ordenar do mais recente para o mais antigo
+);
+
+// Adicionar contagem de agendamentos ativos para cada slot
+foreach ($allslots as $slot) {
+    $slot->active_bookings = $DB->count_records('quizscheduler_bookings', array(
+        'slotid' => $slot->id
+    ));
+}
+
 $totalslots = count($allslots);
 
 // Aplicar paginação
