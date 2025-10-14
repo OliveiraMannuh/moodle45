@@ -27,8 +27,6 @@ require_once(__DIR__.'/lib.php');
 
 // Course module id.
 $id = optional_param('id', 0, PARAM_INT);
-
-// Activity instance id.
 $q = optional_param('q', 0, PARAM_INT);
 
 if ($id) {
@@ -45,15 +43,21 @@ require_login($course, true, $cm);
 
 $modulecontext = context_module::instance($cm->id);
 
-// CORREÇÃO: Verificar se usuário pode visualizar o módulo
 if (!has_capability('mod/quizscheduler:view', $modulecontext)) {
-    throw new \moodle_exception('nopermissions', 'mod_quizscheduler');
+    throw new moodle_exception('nopermissions', 'error', '', 'view');
 }
 
-$PAGE->set_url('/mod/quizscheduler/view.php', array('id' => $cm->id));
+// Parâmetros de paginação
+$page = optional_param('page', 0, PARAM_INT);
+$perpage = optional_param('perpage', 10, PARAM_INT);
+
+$PAGE->set_url('/mod/quizscheduler/view.php', array('id' => $cm->id, 'page' => $page, 'perpage' => $perpage));
 $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
+
+// CORREÇÃO CRÍTICA: Adicionar JavaScript inline ANTES do header
+echo '<script src="' . new moodle_url('/mod/quizscheduler/remove_duplicates.js') . '"></script>';
 
 echo $OUTPUT->header();
 
@@ -106,12 +110,6 @@ $allUserBookings = quizscheduler_get_user_bookings($USER->id, $moduleinstance->i
 $activeUserBookings = quizscheduler_get_user_bookings($USER->id, $moduleinstance->id, true);
 $hasActiveBooking = quizscheduler_user_has_active_booking($USER->id, $moduleinstance->id);
 
-// Obter todos os slots disponíveis
-$availableSlots = $DB->get_records('quizscheduler_slots', 
-    array('quizschedulerid' => $moduleinstance->id), 
-    'starttime ASC'
-);
-
 // Exibir agendamentos do usuário
 if (!empty($allUserBookings)) {
     echo $OUTPUT->heading(get_string('yourbookings', 'quizscheduler'), 4);
@@ -158,23 +156,79 @@ if (!empty($allUserBookings)) {
     echo html_writer::table($table);
 }
 
-// Exibir horários disponíveis
-if (!empty($availableSlots)) {
+// CORREÇÃO: Obter slots disponíveis diretamente do banco de dados
+$allslots = $DB->get_records('quizscheduler_slots', 
+    array('quizschedulerid' => $moduleinstance->id), 
+    'starttime DESC'
+);
+
+// Contar total de slots
+$totalslots = count($allslots);
+
+// Aplicar paginação
+$offset = $page * $perpage;
+if ($perpage > 0) {
+    $slots = array_slice($allslots, $offset, $perpage);
+} else {
+    $slots = $allslots; // Mostrar todos
+}
+
+if (!empty($slots)) {
     echo $OUTPUT->heading(get_string('availableslots', 'quizscheduler'), 4);
     
+    // Controles de paginação ANTES da tabela
+    echo '<div class="scheduling-controls-wrapper">';
+    
+    // Controle de itens por página
+    echo '<div class="items-per-page-control">';
+    echo '<form method="get" action="' . $PAGE->url->out_omit_querystring() . '" id="perpage-form">';
+    echo '<input type="hidden" name="id" value="' . $cm->id . '">';
+    echo '<label for="perpage-select">Mostrar: </label>';
+
+    $perpageoptions = [
+        5 => '5',
+        10 => '10',
+        20 => '20',
+        50 => '50',
+        100 => '100',
+        0 => 'Todos'
+    ];
+
+    echo html_writer::select($perpageoptions, 'perpage', $perpage, false, [
+        'id' => 'perpage-select',
+        'class' => 'custom-select',
+        'onchange' => 'this.form.submit()'
+    ]);
+
+    echo ' horários por página';
+    echo '</form>';
+    echo '</div>';
+
+    // Informação de registros
+    if ($totalslots > 0) {
+        $start = $offset + 1;
+        $end = min($offset + $perpage, $totalslots);
+        if ($perpage == 0) {
+            $end = $totalslots;
+            $start = 1;
+        }
+        echo '<div class="slots-info">';
+        echo "Mostrando {$start} a {$end} de {$totalslots} horários";
+        echo '</div>';
+    }
+
+    echo '</div>'; // fim scheduling-controls-wrapper
+    
+    // Tabela de horários
     $table = new html_table();
+    $table->attributes['class'] = 'timeslots-table generaltable';
     $table->head = array(
         get_string('datetime', 'quizscheduler'),
         get_string('availability', 'quizscheduler'),
         get_string('actions', 'quizscheduler')
     );
-
-    // Ordenar slots por data/hora (mais recente primeiro)
-    usort($availableSlots, function($a, $b) {
-        return $b->starttime - $a->starttime;
-    });
     
-    foreach ($availableSlots as $slot) {
+    foreach ($slots as $slot) {
         $row = new html_table_row();
         
         // Data e hora
@@ -184,7 +238,7 @@ if (!empty($availableSlots)) {
         
         // Disponibilidade
         $bookingCount = $DB->count_records('quizscheduler_bookings', array('slotid' => $slot->id));
-        $maxUsers = isset($slot->maxusers) ? $slot->maxusers : $slot->maxparticipants;
+        $maxUsers = isset($slot->maxusers) ? $slot->maxusers : (isset($slot->maxparticipants) ? $slot->maxparticipants : 1);
         $availability = $bookingCount . '/' . $maxUsers . ' reservado(s)';
         $row->cells[] = $availability;
         
@@ -203,21 +257,21 @@ if (!empty($availableSlots)) {
         if ($userHasThisSlot) {
             // Usuário já tem este slot
             if ($slot->endtime > $currentTime) {
-                $actioncell = 'Agendado (Ativo)';
+                $actioncell = html_writer::span('Agendado (Ativo)', 'badge badge-success');
             } else {
-                $actioncell = 'Concluído';
+                $actioncell = html_writer::span('Concluído', 'badge badge-secondary');
             }
         } else {
             // Usuário não tem este slot
             if ($hasActiveBooking) {
                 // Tem agendamento ativo em outro slot
-                $actioncell = 'Você possui um agendamento ativo';
+                $actioncell = html_writer::span('Você possui um agendamento ativo', 'badge badge-warning');
             } else if ($slot->starttime <= $currentTime) {
                 // Slot já passou
-                $actioncell = 'Horário passou';
+                $actioncell = html_writer::span('Horário passou', 'badge badge-secondary');
             } else if ($bookingCount >= $maxUsers) {
                 // Slot lotado
-                $actioncell = 'Lotado';
+                $actioncell = html_writer::span('Lotado', 'badge badge-danger');
             } else {
                 // Pode agendar - BOTÃO DE AÇÃO
                 $bookurl = new moodle_url('/mod/quizscheduler/book.php', array(
@@ -235,6 +289,16 @@ if (!empty($availableSlots)) {
     }
     
     echo html_writer::table($table);
+    
+    // Paginação APÓS a tabela
+    if ($perpage > 0 && $totalslots > $perpage) {
+        $baseurl = new moodle_url('/mod/quizscheduler/view.php', [
+            'id' => $cm->id,
+            'perpage' => $perpage
+        ]);
+        echo $OUTPUT->paging_bar($totalslots, $page, $perpage, $baseurl);
+    }
+    
 } else {
     echo $OUTPUT->box(
         'Nenhum horário disponível no momento.',
@@ -249,32 +313,5 @@ $maxBookings = isset($moduleinstance->maxbookings) ? $moduleinstance->maxbooking
 echo html_writer::tag('p', 
     'Agendamentos: ' . $totalBookings . ' de ' . $maxBookings . ' utilizados'
 );
-
-// Procurar pela seção onde o POST do booking é processado
-if ($action == 'bookslot') {
-    // ...existing booking logic...
-    
-    // Após a linha onde o booking é salvo (geralmente após um $DB->insert_record)
-    // Adicionar imediatamente:
-    
-    // Enviar email de confirmação
-    $slot = $DB->get_record('quizscheduler_slots', array('id' => $slotid));
-    $student = $USER;
-    $course = $DB->get_record('course', array('id' => $cm->course));
-    
-    // Preparar email
-    $subject = 'Agendamento confirmado: ' . $scheduler->name;
-    $message = "Olá " . fullname($student) . ",\n\n";
-    $message .= "Seu agendamento foi confirmado:\n\n";
-    $message .= "Quiz: " . $scheduler->name . "\n";
-    $message .= "Data: " . userdate($slot->starttime, '%d/%m/%Y') . "\n";
-    $message .= "Horário: " . userdate($slot->starttime, '%H:%M') . " - " . userdate($slot->endtime, '%H:%M') . "\n";
-    $message .= "Curso: " . $course->fullname . "\n\n";
-    $message .= "Compareça no horário agendado.\n\n";
-    $message .= "Atenciosamente";
-    
-    // Enviar email
-    email_to_user($student, core_user::get_noreply_user(), $subject, $message);
-}
 
 echo $OUTPUT->footer();

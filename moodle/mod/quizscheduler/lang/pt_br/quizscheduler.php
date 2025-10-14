@@ -289,3 +289,8 @@ Por favor, certifique-se de comparecer no horário agendado.
 Atenciosamente,
 {$a->sitename}';
 $string['email_booking_small'] = 'Horário do Quiz agendado: {$a->quizname} em {$a->date} às {$a->starttime}';
+
+$string['show'] = 'Mostrar';
+$string['all'] = 'Todos';
+$string['slotsperpage'] = 'horários por página';
+$string['showingslots'] = 'Mostrando {$a->start} a {$a->end} de {$a->total} horários';

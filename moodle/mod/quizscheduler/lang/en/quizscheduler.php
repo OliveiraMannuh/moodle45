@@ -294,3 +294,8 @@ Please make sure to attend at the scheduled time.
 Best regards,
 {$a->sitename}';
 $string['email_booking_small'] = 'Quiz slot booked: {$a->quizname} on {$a->date} at {$a->starttime}';
+
+$string['show'] = 'Show';
+$string['all'] = 'All';
+$string['slotsperpage'] = 'slots per page';
+$string['showingslots'] = 'Showing {$a->start} to {$a->end} of {$a->total} slots';
