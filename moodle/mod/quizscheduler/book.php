@@ -113,7 +113,7 @@ if ($action === 'book') {
             
             $messagetext = "Olá " . fullname($student) . ",\n\n";
             $messagetext .= "Você se inscreveu com sucesso na avaliação:\n\n";
-            $messagetext .= "Questionário: " . $quiz->name . "\n";
+            $messagetext .= "Atividade: " . $quiz->name . "\n";
             $messagetext .= "Data: " . userdate($slot->starttime, '%d/%m/%Y') . "\n";
             $messagetext .= "Horário: " . userdate($slot->starttime, '%H:%M') . " - " . userdate($slot->endtime, '%H:%M') . "\n";
             $messagetext .= "Curso: " . $course->fullname . "\n\n";
@@ -190,7 +190,7 @@ if ($action === 'book') {
                                 📅 Adicionar ao Google Calendar
                             </a>
                             <p style="margin-top: 15px; font-size: 12px; color: #666;">
-                                Clique no botão acima para adicionar o agendamento ao Google Calendar
+                                Clique no botão acima para adicionar o agendamento ao Google Calendar.
                             </p>
                         </td>
                     </tr>

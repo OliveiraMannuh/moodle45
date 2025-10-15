@@ -132,8 +132,7 @@ class quiz_access_manager {
                 $message = "Acesso negado. Você não possui agendamentos válidos para este horário. " .
                     "Verifique seus agendamentos ou faça um novo agendamento.";
             } else {
-                $message = "Acesso negado. Você precisa agendar um horário antes de acessar este questionário. " .
-                    "Clique em 'Ir para Agendamento' para selecionar um horário disponível.";
+                $message = "Acesso negado. Você precisa agendar um horário antes de acessar este questionário.";
             }
         }
 

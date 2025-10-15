@@ -58,12 +58,30 @@ class mod_quizscheduler_mod_form extends moodleform_mod {
         $this->standard_intro_elements();
 
         // Quiz selection.
-        $quizzes = $DB->get_records_menu('quiz', array('course' => $this->current->course), 'name', 'id, name');
-        if (empty($quizzes)) {
+        // CORREÇÃO: Buscar apenas quizzes ativos (não excluídos)
+        $quizzes = $DB->get_records_sql(
+            "SELECT q.id, q.name
+             FROM {quiz} q
+             INNER JOIN {course_modules} cm ON cm.instance = q.id
+             INNER JOIN {modules} m ON m.id = cm.module
+             WHERE q.course = :courseid
+             AND m.name = 'quiz'
+             AND cm.deletioninprogress = 0
+             ORDER BY q.name ASC",
+            array('courseid' => $this->current->course)
+        );
+        
+        // Converter para o formato menu (id => name)
+        $quizmenu = array();
+        foreach ($quizzes as $quiz) {
+            $quizmenu[$quiz->id] = $quiz->name;
+        }
+        
+        if (empty($quizmenu)) {
             $mform->addElement('static', 'noquizzes', get_string('quizid', 'mod_quizscheduler'), 
                 get_string('error:noquiz', 'mod_quizscheduler'));
         } else {
-            $mform->addElement('select', 'quizid', get_string('quizid', 'mod_quizscheduler'), $quizzes);
+            $mform->addElement('select', 'quizid', get_string('quizid', 'mod_quizscheduler'), $quizmenu);
             $mform->addHelpButton('quizid', 'quizid', 'mod_quizscheduler');
             $mform->addRule('quizid', null, 'required', null, 'client');
         }
