@@ -72,19 +72,20 @@ if ($action === 'delete') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_sesskey();
     
-    // CORREÇÃO: Processar campos de data e hora corretamente
-    $generate_startdate = optional_param('generate_startdate', '', PARAM_TEXT);
-    $generate_starttime = optional_param('generate_starttime', '', PARAM_TEXT);
-    $generate_enddate = optional_param('generate_enddate', '', PARAM_TEXT);
-    $generate_endtime = optional_param('generate_endtime', '', PARAM_TEXT);
-    $slot_duration = optional_param('slot_duration', 60, PARAM_INT);
-    $max_participants = optional_param('max_participants', 1, PARAM_INT);
+    // Processar campos de data e hora
+    $startdate = optional_param('startdate', '', PARAM_TEXT);
+    $enddate = optional_param('enddate', '', PARAM_TEXT);
+    $starttime = optional_param('starttime', '', PARAM_TEXT);
+    $endtime = optional_param('endtime', '', PARAM_TEXT);
+    $slot_duration = optional_param('slotduration', 60, PARAM_INT);
+    $max_participants = optional_param('maxusers', 1, PARAM_INT);
+    $weekdays = optional_param_array('weekdays', [], PARAM_INT);
     
-    if ($generate_startdate && $generate_starttime && $generate_enddate && $generate_endtime) {
+    if ($startdate && $starttime && $enddate && $endtime && !empty($weekdays)) {
         try {
             // Converter strings de data/hora para timestamps
-            $start_datetime = $generate_startdate . ' ' . $generate_starttime;
-            $end_datetime = $generate_enddate . ' ' . $generate_endtime;
+            $start_datetime = $startdate . ' ' . $starttime;
+            $end_datetime = $enddate . ' ' . $endtime;
             
             $start_timestamp = strtotime($start_datetime);
             $end_timestamp = strtotime($end_datetime);
@@ -97,13 +98,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new \moodle_exception('error:invalidtimes', 'mod_quizscheduler');
             }
             
-            $count = mod_quizscheduler\manager::generate_slots(
-                $moduleinstance->id,
-                $start_timestamp,
-                $end_timestamp,
-                $slot_duration,
-                $max_participants
-            );
+            // Gerar slots baseado nos dias da semana selecionados
+            $count = 0;
+            $current = $start_timestamp;
+            
+            while ($current < $end_timestamp) {
+                $current_weekday = (int)date('w', $current);
+                
+                // Verificar se o dia atual está na lista de dias selecionados
+                if (in_array($current_weekday, $weekdays)) {
+                    // Gerar slots para este dia
+                    $day_start = strtotime(date('Y-m-d', $current) . ' ' . $starttime);
+                    $day_end = strtotime(date('Y-m-d', $current) . ' ' . $endtime);
+                    
+                    $slot_start = $day_start;
+                    while ($slot_start + ($slot_duration * 60) <= $day_end) {
+                        $slot_end = $slot_start + ($slot_duration * 60);
+                        
+                        // Criar o slot
+                        $slot = new stdClass();
+                        $slot->quizschedulerid = $moduleinstance->id;
+                        $slot->starttime = $slot_start;
+                        $slot->endtime = $slot_end;
+                        $slot->maxparticipants = $max_participants;
+                        $slot->timecreated = time();
+                        $slot->timemodified = time();
+                        
+                        $DB->insert_record('quizscheduler_slots', $slot);
+                        $count++;
+                        
+                        $slot_start = $slot_end;
+                    }
+                }
+                
+                // Avançar para o próximo dia
+                $current = strtotime('+1 day', $current);
+            }
             
             redirect($PAGE->url, get_string('slotsgenerated', 'mod_quizscheduler', $count), null, \core\output\notification::NOTIFY_SUCCESS);
             
@@ -116,100 +146,218 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('manageschedules', 'quizscheduler'));
 
-echo $OUTPUT->heading(get_string('manageslots', 'mod_quizscheduler'));
+// Adicionar container para o novo formulário
+echo html_writer::start_div('schedule-manager-container');
 
-// Navigation.
-$viewurl = new moodle_url('/mod/quizscheduler/view.php', array('id' => $cm->id));
-echo html_writer::div(
-    html_writer::link($viewurl, get_string('back'), array('class' => 'btn btn-secondary')),
-    'mb-3'
-);
+// Formulário de geração de horários aprimorado
+echo html_writer::start_div('schedule-generator-form card mb-4');
+echo html_writer::tag('h3', get_string('generateschedules', 'quizscheduler'), ['class' => 'card-header']);
+echo html_writer::start_div('card-body');
 
-// Slot generation form.
-echo $OUTPUT->box_start('generalbox');
-echo html_writer::tag('h4', get_string('generateslots', 'mod_quizscheduler'));
+echo html_writer::start_tag('form', [
+    'method' => 'post',
+    'id' => 'schedule-form',
+    'class' => 'schedule-generator'
+]);
 
-echo html_writer::start_tag('form', array('method' => 'post', 'action' => $PAGE->url));
-echo html_writer::empty_tag('input', array('type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()));
+// ADICIONAR SESSKEY - IMPORTANTE!
+echo html_writer::empty_tag('input', [
+    'type' => 'hidden',
+    'name' => 'sesskey',
+    'value' => sesskey()
+]);
 
-echo html_writer::start_div('row');
-
-// Start date/time
-echo html_writer::start_div('col-md-6');
-echo html_writer::tag('label', get_string('starttime', 'mod_quizscheduler'));
-echo html_writer::empty_tag('input', array(
-    'type' => 'date',
-    'name' => 'generate_startdate',
-    'class' => 'form-control mb-2',
-    'required' => 'required'
-));
-echo html_writer::empty_tag('input', array(
-    'type' => 'time',
-    'name' => 'generate_starttime',
-    'class' => 'form-control mb-2',
-    'required' => 'required'
-));
-echo html_writer::end_div();
-
-// End date/time
-echo html_writer::start_div('col-md-6');
-echo html_writer::tag('label', get_string('endtime', 'mod_quizscheduler'));
-echo html_writer::empty_tag('input', array(
-    'type' => 'date',
-    'name' => 'generate_enddate',
-    'class' => 'form-control mb-2',
-    'required' => 'required'
-));
-echo html_writer::empty_tag('input', array(
-    'type' => 'time',
-    'name' => 'generate_endtime',
-    'class' => 'form-control mb-2',
-    'required' => 'required'
-));
-echo html_writer::end_div();
-
-echo html_writer::end_div();
+// Seção de Cronometragem (Período)
+echo html_writer::start_div('form-section mb-4');
+echo html_writer::tag('h4', get_string('scheduleperiod', 'quizscheduler'), ['class' => 'mb-3']);
 
 echo html_writer::start_div('row');
 
-// Duration and participants
-echo html_writer::start_div('col-md-6');
-echo html_writer::tag('label', get_string('slotduration', 'mod_quizscheduler'));
-echo html_writer::empty_tag('input', array(
+// Data de início
+echo html_writer::start_div('col-md-6 mb-3');
+echo html_writer::tag('label', get_string('startdate', 'quizscheduler'), [
+    'for' => 'start-date',
+    'class' => 'form-label'
+]);
+echo html_writer::empty_tag('input', [
+    'type' => 'date',
+    'id' => 'start-date',
+    'name' => 'startdate',
+    'class' => 'form-control',
+    'required' => 'required',
+    'min' => date('Y-m-d')
+]);
+echo html_writer::end_div();
+
+// Data de término
+echo html_writer::start_div('col-md-6 mb-3');
+echo html_writer::tag('label', get_string('enddate', 'quizscheduler'), [
+    'for' => 'end-date',
+    'class' => 'form-label'
+]);
+echo html_writer::empty_tag('input', [
+    'type' => 'date',
+    'id' => 'end-date',
+    'name' => 'enddate',
+    'class' => 'form-control',
+    'required' => 'required',
+    'min' => date('Y-m-d')
+]);
+echo html_writer::end_div();
+
+echo html_writer::end_div(); // row
+
+// Seleção de dias da semana
+echo html_writer::start_div('weekdays-selector mb-3');
+echo html_writer::tag('label', get_string('selectweekdays', 'quizscheduler'), ['class' => 'form-label d-block mb-2']);
+
+$weekdays = [
+    1 => get_string('monday', 'calendar'),
+    2 => get_string('tuesday', 'calendar'),
+    3 => get_string('wednesday', 'calendar'),
+    4 => get_string('thursday', 'calendar'),
+    5 => get_string('friday', 'calendar'),
+    6 => get_string('saturday', 'calendar'),
+    0 => get_string('sunday', 'calendar')
+];
+
+echo html_writer::start_div('weekday-buttons-container d-flex flex-wrap gap-2');
+foreach ($weekdays as $day => $name) {
+    echo html_writer::start_div('form-check form-check-inline');
+    echo html_writer::empty_tag('input', [
+        'type' => 'checkbox',
+        'class' => 'btn-check weekday-checkbox',
+        'id' => 'weekday-' . $day,
+        'name' => 'weekdays[]',
+        'value' => $day,
+        'autocomplete' => 'off'
+    ]);
+    echo html_writer::tag('label', $name, [
+        'class' => 'btn btn-outline-primary btn-weekday',
+        'for' => 'weekday-' . $day
+    ]);
+    echo html_writer::end_div();
+}
+echo html_writer::end_div();
+echo html_writer::end_div();
+
+echo html_writer::end_div(); // form-section
+
+// Seção de Horários
+echo html_writer::start_div('form-section mb-4');
+echo html_writer::tag('h4', get_string('timesettings', 'quizscheduler'), ['class' => 'mb-3']);
+
+// Container visual para os campos de horário
+echo html_writer::start_div('time-inputs-container');
+echo html_writer::start_div('time-inputs-header');
+echo html_writer::tag('h5', 'Defina o período de funcionamento');
+echo html_writer::end_div();
+
+echo html_writer::start_div('row');
+
+// Horário de início
+echo html_writer::start_div('col-md-3 mb-3');
+echo html_writer::tag('label', get_string('starthour', 'quizscheduler'), [
+    'for' => 'start-time',
+    'class' => 'form-label'
+]);
+echo html_writer::empty_tag('input', [
+    'type' => 'time',
+    'id' => 'start-time',
+    'name' => 'starttime',
+    'class' => 'form-control',
+    'required' => 'required',
+    'step' => '300' // 5 minutos
+]);
+echo html_writer::end_div();
+
+// Horário de término
+echo html_writer::start_div('col-md-3 mb-3');
+echo html_writer::tag('label', get_string('endhour', 'quizscheduler'), [
+    'for' => 'end-time',
+    'class' => 'form-label'
+]);
+echo html_writer::empty_tag('input', [
+    'type' => 'time',
+    'id' => 'end-time',
+    'name' => 'endtime',
+    'class' => 'form-control',
+    'required' => 'required',
+    'step' => '300' // 5 minutos
+]);
+echo html_writer::end_div();
+
+// Duração do slot
+echo html_writer::start_div('col-md-3 mb-3');
+echo html_writer::tag('label', get_string('slotduration', 'quizscheduler'), [
+    'for' => 'slot-duration',
+    'class' => 'form-label'
+]);
+echo html_writer::empty_tag('input', [
     'type' => 'number',
-    'name' => 'slot_duration',
-    'value' => '60',
+    'id' => 'slot-duration',
+    'name' => 'slotduration',
+    'class' => 'form-control',
     'min' => '5',
-    'max' => '300',
-    'class' => 'form-control mb-2',
+    'step' => '5',
+    'value' => $moduleinstance->slotduration ?? '60',
     'required' => 'required'
-));
+]);
+echo html_writer::tag('small', get_string('minutes'), ['class' => 'form-text text-muted']);
 echo html_writer::end_div();
 
-echo html_writer::start_div('col-md-6');
-echo html_writer::tag('label', get_string('maxusersperslot', 'mod_quizscheduler'));
-echo html_writer::empty_tag('input', array(
+// Máximo de usuários por slot
+echo html_writer::start_div('col-md-3 mb-3');
+echo html_writer::tag('label', get_string('maxusers', 'quizscheduler'), [
+    'for' => 'max-users',
+    'class' => 'form-label'
+]);
+echo html_writer::empty_tag('input', [
     'type' => 'number',
-    'name' => 'max_participants',
-    'value' => '1',
+    'id' => 'max-users',
+    'name' => 'maxusers',
+    'class' => 'form-control',
     'min' => '1',
-    'max' => '50',
-    'class' => 'form-control mb-2',
+    'value' => '1',
     'required' => 'required'
-));
+]);
 echo html_writer::end_div();
 
+echo html_writer::end_div(); // row
+echo html_writer::end_div(); // time-inputs-container
+
+echo html_writer::end_div(); // form-section
+
+// Preview de slots
+echo html_writer::start_div('form-section mb-4');
+echo html_writer::tag('h4', get_string('schedulepreview', 'quizscheduler'), ['class' => 'mb-3']);
+echo html_writer::div('Preencha os campos acima e clique em "Visualizar Horários" para ver uma prévia.', 'alert alert-info', ['id' => 'schedule-preview']);
 echo html_writer::end_div();
 
-echo html_writer::empty_tag('input', array(
+// Botões
+echo html_writer::start_div('form-actions d-flex gap-2');
+echo html_writer::tag('button', get_string('previewschedules', 'quizscheduler'), [
+    'type' => 'button',
+    'id' => 'preview-button',
+    'class' => 'btn btn-secondary'
+]);
+echo html_writer::tag('button', get_string('generateschedules', 'quizscheduler'), [
     'type' => 'submit',
-    'value' => get_string('generateslots', 'mod_quizscheduler'),
     'class' => 'btn btn-primary'
-));
+]);
+echo html_writer::end_div();
 
 echo html_writer::end_tag('form');
-echo $OUTPUT->box_end();
+
+echo html_writer::end_div(); // card-body
+echo html_writer::end_div(); // card
+
+echo html_writer::end_div(); // container
+
+// Carregar o JavaScript
+$PAGE->requires->js_call_amd('mod_quizscheduler/schedule_manager', 'init');
 
 // Current slots - COM PAGINAÇÃO
 echo html_writer::tag('h4', get_string('currentslots', 'mod_quizscheduler'));

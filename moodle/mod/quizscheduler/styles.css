@@ -198,3 +198,287 @@
 .timeslots-table tbody tr:hover {
     background-color: #f8f9fa;
 }
+
+.schedule-generator-form {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.weekday-buttons .btn-check:checked + .btn {
+    background-color: #0f6cbf;
+    color: white;
+}
+
+.weekday-buttons .btn {
+    min-width: 50px;
+}
+
+.schedule-preview-list {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.schedule-preview-list .table {
+    background-color: white;
+    margin-bottom: 0;
+}
+
+.schedule-preview-list .thead-light th {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Date range picker customization */
+#date-range {
+    cursor: pointer;
+    background-color: white;
+}
+
+#date-range:focus {
+    border-color: #0f6cbf;
+    box-shadow: 0 0 0 0.2rem rgba(15, 108, 191, 0.25);
+}
+
+/* Flatpickr customization */
+.flatpickr-calendar {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 8px !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
+.flatpickr-months {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.flatpickr-current-month {
+    color: white !important;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    fill: white !important;
+}
+
+.flatpickr-day.selected {
+    background: #0f6cbf !important;
+    border-color: #0f6cbf !important;
+}
+
+.flatpickr-day.selected.startRange,
+.flatpickr-day.selected.endRange {
+    background: #0a4d8c !important;
+    border-radius: 4px !important;
+}
+
+.flatpickr-day.inRange {
+    background: rgba(15, 108, 191, 0.25) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.flatpickr-day.today {
+    border-color: #0f6cbf !important;
+}
+
+.flatpickr-day:hover {
+    background: #e9ecef !important;
+    border-color: #e9ecef !important;
+}
+
+.flatpickr-clear-btn-container {
+    padding: 10px;
+    text-align: center;
+    border-top: 1px solid #e6e6e6;
+}
+
+/* Weekday buttons styling */
+.weekday-buttons-container {
+    gap: 10px;
+}
+
+.btn-weekday {
+    min-width: 100px;
+    font-weight: 500;
+}
+
+.btn-check:checked + .btn-weekday {
+    background-color: #0f6cbf !important;
+    border-color: #0f6cbf !important;
+    color: white !important;
+}
+
+.form-check-inline {
+    margin-right: 0;
+}
+
+/* Date inputs styling */
+input[type="date"] {
+    cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.5);
+}
+
+input[type="date"]:hover::-webkit-calendar-picker-indicator {
+    filter: invert(0.3);
+}
+
+/* Form section styling */
+.form-section {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+/* Preview styling improvements */
+.schedule-preview-list .table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #e9ecef;
+    z-index: 10;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .weekday-buttons-container {
+        flex-direction: column;
+    }
+    
+    .btn-weekday {
+        width: 100%;
+    }
+}
+
+/* Time Input Styling - Enhanced */
+input[type="time"] {
+    cursor: pointer;
+    padding: 12px 15px;
+    font-size: 16px;
+    font-weight: 500;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+input[type="time"]:hover {
+    border-color: #0f6cbf;
+    box-shadow: 0 4px 8px rgba(15, 108, 191, 0.1);
+}
+
+input[type="time"]:focus {
+    outline: none;
+    border-color: #0f6cbf;
+    box-shadow: 0 0 0 0.2rem rgba(15, 108, 191, 0.25);
+    background: white;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+input[type="time"]:hover::-webkit-calendar-picker-indicator {
+    background-color: rgba(15, 108, 191, 0.1);
+}
+
+input[type="time"]::-webkit-datetime-edit {
+    padding: 2px;
+}
+
+input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+    background: transparent;
+}
+
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field {
+    background: rgba(15, 108, 191, 0.05);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 0 2px;
+    font-weight: 600;
+    color: #0f6cbf;
+}
+
+input[type="time"]::-webkit-datetime-edit-hour-field:focus,
+input[type="time"]::-webkit-datetime-edit-minute-field:focus {
+    background: rgba(15, 108, 191, 0.15);
+    outline: none;
+}
+
+/* Firefox */
+input[type="time"]::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+}
+
+/* Configurações de Horário - Layout melhorado */
+.form-section .row .col-md-3 {
+    position: relative;
+}
+
+.form-section .row .col-md-3 label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.form-section .row .col-md-3 label::before {
+    content: "🕐";
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    input[type="time"] {
+        width: 100%;
+        font-size: 18px;
+        padding: 14px 15px;
+    }
+}
+
+/* Container dos campos de horário */
+.time-inputs-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 20px;
+}
+
+.time-inputs-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.time-inputs-header h5 {
+    margin: 0;
+    color: #495057;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.time-inputs-header::before {
+    content: "⏰";
+    font-size: 24px;
+    margin-right: 10px;
+}

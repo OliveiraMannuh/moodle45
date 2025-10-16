@@ -152,7 +152,22 @@ $string['admininfo'] = 'Use as opções abaixo para gerenciar horários e visual
 $string['bookinginfo'] = 'Informações de Agendamento';
 $string['schedulinginfo'] = 'Informações de Agendamento';
 $string['bookingperiod'] = 'Período de agendamento: {$a->open} até {$a->close}';
-$string['scheduleperiod'] = 'Período de agendamento';
+$string['scheduleperiod'] = 'Período do Agendamento';
+$string['selectweekdays'] = 'Selecione os dias da semana';
+$string['timesettings'] = 'Configurações de Horário';
+$string['starthour'] = 'Horário de Início';
+$string['endhour'] = 'Horário de Término';
+$string['schedulepreview'] = 'Prévia dos Horários';
+$string['previewschedules'] = 'Visualizar Horários';
+$string['generateschedules'] = 'Gerar Horários';
+$string['manageschedules'] = 'Gerenciar Horários';
+$string['startdate'] = 'Data de Início';
+$string['enddate'] = 'Data de Término';
+$string['selectdaterange'] = 'Selecione o Período';
+$string['selectdaterange_placeholder'] = 'Clique para selecionar o intervalo de datas';
+
+// ...existing code...
+
 $string['until'] = 'até';
 $string['slotsinfo'] = '{$a->available} de {$a->total} horários disponíveis';
 $string['bookingsleft'] = 'Agendamentos: {$a->current} de {$a->max} utilizados';
