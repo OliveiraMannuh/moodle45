@@ -163,7 +163,7 @@ if ($action === 'book') {
                             <p>Você se inscreveu com sucesso na avaliação:</p>
                             
                             <div style="background-color: #ffeff2; padding: 20px; border-left: 4px solid #942037; margin: 20px 0;">
-                                <p style="margin: 5px 0;"><strong>Questionário:</strong> ' . htmlspecialchars($quiz->name) . '</p>
+                                <p style="margin: 5px 0;"><strong>Atividade:</strong> ' . htmlspecialchars($quiz->name) . '</p>
                                 <p style="margin: 5px 0;"><strong>Data:</strong> ' . userdate($slot->starttime, '%d/%m/%Y') . '</p>
                                 <p style="margin: 5px 0;"><strong>Horário:</strong> ' . userdate($slot->starttime, '%H:%M') . ' - ' . userdate($slot->endtime, '%H:%M') . '</p>
                                 <p style="margin: 5px 0;"><strong>Curso:</strong> ' . htmlspecialchars($course->fullname) . '</p>

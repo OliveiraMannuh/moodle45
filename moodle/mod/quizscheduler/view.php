@@ -159,159 +159,258 @@ if (!empty($allUserBookings)) {
 // CORREÇÃO: Obter slots disponíveis diretamente do banco de dados
 $allslots = $DB->get_records('quizscheduler_slots', 
     array('quizschedulerid' => $moduleinstance->id), 
-    'starttime DESC'  // Já está ordenando por mais recente primeiro
+    'starttime ASC'  // Ordenar por data crescente para o calendário
 );
 
-// Contar total de slots
-$totalslots = count($allslots);
-
-// Aplicar paginação
-$offset = $page * $perpage;
-if ($perpage > 0) {
-    $slots = array_slice($allslots, $offset, $perpage);
-} else {
-    $slots = $allslots; // Mostrar todos
-}
-
-if (!empty($slots)) {
-    echo $OUTPUT->heading(get_string('availableslots', 'quizscheduler'), 4);
+// NOVO: Organizar slots por data para o calendário
+$slots_by_date = [];
+foreach ($allslots as $slot) {
+    // Calcular duração em minutos
+    $duration = round(($slot->endtime - $slot->starttime) / 60);
     
-    // Controles de paginação ANTES da tabela
-    echo '<div class="scheduling-controls-wrapper">';
+    $date = date('Y-m-d', $slot->starttime);
+    if (!isset($slots_by_date[$date])) {
+        $slots_by_date[$date] = [];
+    }
     
-    // Controle de itens por página
-    echo '<div class="items-per-page-control">';
-    echo '<form method="get" action="' . $PAGE->url->out_omit_querystring() . '" id="perpage-form">';
-    echo '<input type="hidden" name="id" value="' . $cm->id . '">';
-    echo '<label for="perpage-select">Mostrar: </label>';
-
-    $perpageoptions = [
-        5 => '5',
-        10 => '10',
-        20 => '20',
-        50 => '50',
-        100 => '100',
-        0 => 'Todos'
+    // Verificar disponibilidade
+    $bookingCount = $DB->count_records('quizscheduler_bookings', array('slotid' => $slot->id));
+    $maxUsers = isset($slot->maxusers) ? $slot->maxusers : 1;
+    $isAvailable = ($bookingCount < $maxUsers) && ($slot->starttime > $currentTime);
+    
+    // Verificar se usuário já tem este slot
+    $userHasThisSlot = false;
+    foreach ($allUserBookings as $booking) {
+        if ($booking->slotid == $slot->id) {
+            $userHasThisSlot = true;
+            break;
+        }
+    }
+    
+    $slots_by_date[$date][] = [
+        'id' => $slot->id,
+        'time' => date('H:i', $slot->starttime),
+        'starttime' => $slot->starttime,
+        'endtime' => $slot->endtime,
+        'duration' => $duration,
+        'available' => $isAvailable,
+        'booked' => $bookingCount,
+        'max' => $maxUsers,
+        'userBooked' => $userHasThisSlot
     ];
-
-    echo html_writer::select($perpageoptions, 'perpage', $perpage, false, [
-        'id' => 'perpage-select',
-        'class' => 'custom-select',
-        'onchange' => 'this.form.submit()'
-    ]);
-
-    echo ' horários por página';
-    echo '</form>';
-    echo '</div>';
-
-    // Informação de registros
-    if ($totalslots > 0) {
-        $start = $offset + 1;
-        $end = min($offset + $perpage, $totalslots);
-        if ($perpage == 0) {
-            $end = $totalslots;
-            $start = 1;
-        }
-        echo '<div class="slots-info">';
-        echo "Mostrando {$start} a {$end} de {$totalslots} horários";
-        echo '</div>';
-    }
-
-    echo '</div>'; // fim scheduling-controls-wrapper
-    
-    // Tabela de horários
-    $table = new html_table();
-    $table->attributes['class'] = 'timeslots-table generaltable';
-    $table->head = array(
-        get_string('datetime', 'quizscheduler'),
-        get_string('availability', 'quizscheduler'),
-        get_string('actions', 'quizscheduler')
-    );
-    
-    foreach ($slots as $slot) {
-        $row = new html_table_row();
-        
-        // Data e hora
-        $datetime = userdate($slot->starttime, '%A, %d %b %Y, %H:%M') . 
-                   ' - ' . userdate($slot->endtime, '%H:%M') . ' PM';
-        $row->cells[] = $datetime;
-        
-        // Disponibilidade
-        $bookingCount = $DB->count_records('quizscheduler_bookings', array('slotid' => $slot->id));
-        $maxUsers = isset($slot->maxusers) ? $slot->maxusers : (isset($slot->maxparticipants) ? $slot->maxparticipants : 1);
-        $availability = $bookingCount . '/' . $maxUsers . ' reservado(s)';
-        $row->cells[] = $availability;
-        
-        // Ações - LÓGICA CORRIGIDA
-        $actioncell = '';
-        
-        // Verificar se usuário já tem este slot específico
-        $userHasThisSlot = false;
-        foreach ($allUserBookings as $booking) {
-            if ($booking->slotid == $slot->id) {
-                $userHasThisSlot = true;
-                break;
-            }
-        }
-        
-        if ($userHasThisSlot) {
-            // Usuário já tem este slot
-            if ($slot->endtime > $currentTime) {
-                $actioncell = html_writer::span('Agendado (Ativo)', 'badge badge-success');
-            } else {
-                $actioncell = html_writer::span('Concluído', 'badge badge-secondary');
-            }
-        } else {
-            // Usuário não tem este slot
-            if ($hasActiveBooking) {
-                // Tem agendamento ativo em outro slot
-                $actioncell = html_writer::span('Você possui um agendamento ativo', 'badge badge-warning');
-            } else if ($slot->starttime <= $currentTime) {
-                // Slot já passou
-                $actioncell = html_writer::span('Horário passou', 'badge badge-secondary');
-            } else if ($bookingCount >= $maxUsers) {
-                // Slot lotado
-                $actioncell = html_writer::span('Lotado', 'badge badge-danger');
-            } else {
-                // Pode agendar - BOTÃO DE AÇÃO
-                $bookurl = new moodle_url('/mod/quizscheduler/book.php', array(
-                    'id' => $cm->id,
-                    'slotid' => $slot->id,
-                    'action' => 'book'
-                ));
-                $actioncell = html_writer::link($bookurl, 'Agendar', 
-                    array('class' => 'btn btn-primary btn-sm'));
-            }
-        }
-        
-        $row->cells[] = $actioncell;
-        $table->data[] = $row;
-    }
-    
-    echo html_writer::table($table);
-    
-    // Paginação APÓS a tabela
-    if ($perpage > 0 && $totalslots > $perpage) {
-        $baseurl = new moodle_url('/mod/quizscheduler/view.php', [
-            'id' => $cm->id,
-            'perpage' => $perpage
-        ]);
-        echo $OUTPUT->paging_bar($totalslots, $page, $perpage, $baseurl);
-    }
-    
-} else {
-    echo $OUTPUT->box(
-        'Nenhum horário disponível no momento.',
-        'generalbox boxaligncenter alert alert-info'
-    );
 }
+
+// ==================== NOVA INTERFACE DE CALENDÁRIO ====================
+echo '<div class="quizscheduler-booking-wrapper">
+    <div class="booking-hero">
+        <h2>Agendar Horário</h2>
+        <p>Selecione uma data e horário disponível</p>
+    </div>
+    
+    <div class="booking-grid">
+        <div class="booking-calendar">
+            <div class="calendar-header">Escolha a data</div>
+            
+            <div class="calendar-nav">
+                <button onclick="changeMonth(-1)">← Anterior</button>
+                <span class="calendar-month-label" id="current-month"></span>
+                <button onclick="changeMonth(1)">Próximo →</button>
+            </div>
+            
+            <table class="calendar-table">
+                <thead>
+                    <tr>
+                        <th>Dom</th>
+                        <th>Seg</th>
+                        <th>Ter</th>
+                        <th>Qua</th>
+                        <th>Qui</th>
+                        <th>Sex</th>
+                        <th>Sáb</th>
+                    </tr>
+                </thead>
+                <tbody id="calendar-body"></tbody>
+            </table>
+        </div>
+        
+        <div class="booking-slots">
+            <div class="slots-header">Horários disponíveis</div>
+            <div class="slots-list" id="slots-list">
+                <div class="slots-empty">Selecione uma data no calendário</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="booking-footer">
+        <div class="booking-selection" id="selection-status">Nenhum horário selecionado</div>
+        <button class="booking-confirm-btn" id="confirm-btn" disabled>Confirmar Agendamento</button>
+    </div>
+</div>
+
+<script>
+const slotsData = ' . json_encode($slots_by_date) . ';
+const hasActiveBooking = ' . ($hasActiveBooking ? 'true' : 'false') . ';
+const cmId = ' . $cm->id . ';
+let currentDate = new Date();
+let selectedDate = null;
+let selectedSlot = null;
+
+function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    document.getElementById("current-month").textContent = monthNames[month] + " " + year;
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let html = "<tr>";
+    
+    for (let i = 0; i < firstDay; i++) {
+        html += "<td></td>";
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        if ((firstDay + day - 1) % 7 === 0 && day !== 1) {
+            html += "</tr><tr>";
+        }
+        
+        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const hasSlots = slotsData[dateStr] && slotsData[dateStr].some(s => s.available || s.userBooked);
+        const checkDate = new Date(year, month, day);
+        const isToday = checkDate.getTime() === today.getTime();
+        const isSelected = selectedDate === dateStr;
+        
+        let classes = "calendar-day-btn";
+        if (isToday) classes += " today";
+        if (isSelected) classes += " selected";
+        
+        html += `<td><button class="${classes}" ${!hasSlots ? "disabled" : ""} 
+                 onclick="selectDate(\'${dateStr}\')">${day}</button></td>`;
+    }
+    
+    html += "</tr>";
+    document.getElementById("calendar-body").innerHTML = html;
+}
+
+function changeMonth(delta) {
+    currentDate.setMonth(currentDate.getMonth() + delta);
+    renderCalendar();
+}
+
+function selectDate(date) {
+    selectedDate = date;
+    selectedSlot = null;
+    renderCalendar();
+    renderSlots(date);
+    updateStatus();
+}
+
+function renderSlots(date) {
+    const slots = slotsData[date] || [];
+    const container = document.getElementById("slots-list");
+    
+    if (slots.length === 0) {
+        container.innerHTML = \'<div class="slots-empty">Nenhum horário disponível</div>\';
+        return;
+    }
+    
+    let html = "";
+    slots.forEach(slot => {
+        let slotClass = "slot-item";
+        let clickable = true;
+        let slotInfo = `${slot.booked}/${slot.max} reservados`;
+        
+        if (slot.userBooked) {
+            slotClass += " selected";
+            slotInfo = "Você agendou este horário";
+            clickable = false;
+        } else if (!slot.available) {
+            slotClass += " disabled";
+            clickable = false;
+            if (slot.booked >= slot.max) {
+                slotInfo = "Lotado";
+            } else {
+                slotInfo = "Horário passou";
+            }
+        } else if (hasActiveBooking) {
+            slotClass += " disabled";
+            clickable = false;
+            slotInfo = "Você já tem um agendamento ativo";
+        }
+        
+        const onclick = clickable ? `onclick="selectSlot(${slot.id}, \'${slot.time}\', ${slot.starttime})"` : "";
+        const style = !clickable ? \'style="cursor: not-allowed; opacity: 0.6;"\' : "";
+        
+        html += `<div class="${slotClass}" ${onclick} ${style}>
+            <div>
+                <div class="slot-time">${slot.time}</div>
+                <small style="color: #666;">${slotInfo}</small>
+            </div>
+            <span class="slot-duration">${slot.duration} min</span>
+        </div>`;
+    });
+    
+    container.innerHTML = html;
+}
+
+function selectSlot(id, time, starttime) {
+    if (hasActiveBooking) {
+        alert("Você já possui um agendamento ativo.");
+        return;
+    }
+    
+    selectedSlot = {id, time, starttime};
+    document.querySelectorAll(".slot-item:not(.disabled)").forEach(el => el.classList.remove("selected"));
+    event.target.closest(".slot-item").classList.add("selected");
+    updateStatus();
+}
+
+function updateStatus() {
+    const status = document.getElementById("selection-status");
+    const btn = document.getElementById("confirm-btn");
+    
+    if (selectedDate && selectedSlot) {
+        const [y, m, d] = selectedDate.split("-");
+        status.textContent = `Selecionado: ${d}/${m}/${y} às ${selectedSlot.time}`;
+        status.classList.add("has-selection");
+        btn.disabled = false;
+        btn.onclick = () => {
+            if (confirm("Confirmar agendamento para " + d + "/" + m + "/" + y + " às " + selectedSlot.time + "?")) {
+                window.location.href = "book.php?id=" + cmId + "&slotid=" + selectedSlot.id + "&action=book";
+            }
+        };
+    } else {
+        status.textContent = "Nenhum horário selecionado";
+        status.classList.remove("has-selection");
+        btn.disabled = true;
+    }
+}
+
+// Inicializar calendário
+renderCalendar();
+
+// Se há uma data com slots, selecionar automaticamente
+const today = new Date();
+const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+if (slotsData[todayStr] && slotsData[todayStr].length > 0) {
+    selectDate(todayStr);
+}
+</script>';
+
+// ==================== FIM DA NOVA INTERFACE ====================
 
 // Mostrar estatísticas
 $totalBookings = count($allUserBookings);
 $maxBookings = isset($moduleinstance->maxbookings) ? $moduleinstance->maxbookings : 1;
 
 echo html_writer::tag('p', 
-    'Agendamentos: ' . $totalBookings . ' de ' . $maxBookings . ' utilizados'
+    'Agendamentos: ' . $totalBookings . ' de ' . $maxBookings . ' utilizados',
+    array('class' => 'mt-4')
 );
 
 echo $OUTPUT->footer();
